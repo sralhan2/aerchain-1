@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Turn = { role: "user" | "assistant"; content: string };
 type Draft = {
@@ -14,10 +14,36 @@ type Draft = {
 };
 
 export function RfxCopilotClient() {
+  const router = useRouter();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  async function sendToVendors() {
+    if (!draft) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      const res = await fetch("/api/match-rfx-lines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines: draft.lines.map((l) => ({ category: l.category, description: l.description, spec: l.spec })) }),
+      });
+      if (!res.ok) throw new Error(`Matching request failed (${res.status})`);
+      const { rfxLineIds } = await res.json();
+      const query = rfxLineIds?.length ? `?lines=${encodeURIComponent(rfxLineIds.join(","))}` : "";
+      router.push(`/inbox${query}`);
+    } catch (err: any) {
+      // If matching fails, fall back to showing the full fixed catalog rather than blocking the demo.
+      setSendError(err?.message ?? "Couldn't match your draft to the vendor catalog — showing all catalog lines instead.");
+      router.push("/inbox");
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function send(text: string) {
     const nextTurns: Turn[] = [...turns, { role: "user", content: text }];
@@ -142,18 +168,21 @@ export function RfxCopilotClient() {
             </ul>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
+          <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between gap-4">
             <p className="text-xs text-neutral-400 max-w-sm">
               For this demo, sending routes to the pre-seeded vendor inbox (4 fabricated responses already on file) rather than a
-              freshly generated one — see the one-pager for why.
+              freshly generated one — see the one-pager for why. The comparison screen will only show the catalog lines that match
+              what you actually asked for above.
             </p>
-            <Link
-              href="/inbox"
-              className="bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-emerald-700 whitespace-nowrap"
+            <button
+              onClick={sendToVendors}
+              disabled={sending}
+              className="bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-emerald-700 disabled:opacity-50 whitespace-nowrap"
             >
-              Send to vendors →
-            </Link>
+              {sending ? "Matching to vendors…" : "Send to vendors →"}
+            </button>
           </div>
+          {sendError && <p className="text-xs text-amber-600 mt-2">⚠ {sendError}</p>}
         </div>
       )}
     </div>

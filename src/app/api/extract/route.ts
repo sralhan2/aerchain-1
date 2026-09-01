@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import path from "path";
-import { db } from "@/lib/db";
+import { replaceVendorExtraction, getExtractionStatus } from "@/lib/store";
 import { parseSource } from "@/lib/extraction/parse-source";
 import { extractVendorResponse } from "@/lib/extraction/extract-vendor";
 import { normalizeUnitPrice } from "@/lib/extraction/normalize";
@@ -41,25 +41,9 @@ export async function POST(req: Request) {
     }
     const { vendor, result } = outcome.value;
 
-    db.prepare(`DELETE FROM extractions WHERE vendor_id = ?`).run(vendor.id);
-    db.prepare(`DELETE FROM unmatched_lines WHERE vendor_id = ?`).run(vendor.id);
-    db.prepare(`DELETE FROM questionnaire_answers WHERE vendor_id = ?`).run(vendor.id);
-    db.prepare(`DELETE FROM vendor_notes WHERE vendor_id = ?`).run(vendor.id);
-    db.prepare(`INSERT OR REPLACE INTO vendors (id, name, response_format, source_file) VALUES (?, ?, ?, ?)`).run(
-      vendor.id,
-      vendor.name,
-      vendor.format,
-      vendor.file
-    );
-
-    const insertLine = db.prepare(`
-      INSERT INTO extractions (vendor_id, rfx_line_id, vendor_description, unit_price, currency, unit_price_basis, normalized_unit_price_inr, confidence, source_citation, flags)
-      VALUES (@vendor_id, @rfx_line_id, @vendor_description, @unit_price, @currency, @unit_price_basis, @normalized_unit_price_inr, @confidence, @source_citation, @flags)
-    `);
-    for (const line of result.lines) {
+    const lines = result.lines.map((line: any) => {
       const normalized = normalizeUnitPrice(line.unit_price, line.currency, line.unit_price_basis);
-      insertLine.run({
-        vendor_id: vendor.id,
+      return {
         rfx_line_id: line.matched_rfx_line_id,
         vendor_description: line.vendor_description,
         unit_price: line.unit_price,
@@ -68,14 +52,11 @@ export async function POST(req: Request) {
         normalized_unit_price_inr: normalized.value,
         confidence: line.confidence,
         source_citation: line.source_citation,
-        flags: JSON.stringify(line.flags),
-      });
-    }
-    const insertUnmatched = db.prepare(`INSERT INTO unmatched_lines (vendor_id, rfx_line_id) VALUES (?, ?)`);
-    for (const rfxId of result.unmatched_rfx_line_ids) insertUnmatched.run(vendor.id, rfxId);
-    const insertQ = db.prepare(`INSERT INTO questionnaire_answers (vendor_id, question, answer) VALUES (?, ?, ?)`);
-    for (const qa of result.questionnaire_answers) insertQ.run(vendor.id, qa.question, qa.answer);
-    db.prepare(`INSERT INTO vendor_notes (vendor_id, notes) VALUES (?, ?)`).run(vendor.id, result.vendor_notes);
+        flags: line.flags,
+      };
+    });
+
+    await replaceVendorExtraction(vendor, lines, result.unmatched_rfx_line_ids, result.questionnaire_answers, result.vendor_notes);
 
     results.push({ vendorId: vendor.id, linesExtracted: result.lines.length, unmatched: result.unmatched_rfx_line_ids.length });
   }
@@ -84,6 +65,6 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  const rows = db.prepare(`SELECT vendor_id, COUNT(*) as n, MAX(created_at) as last_run FROM extractions GROUP BY vendor_id`).all();
+  const rows = await getExtractionStatus();
   return NextResponse.json({ status: rows });
 }

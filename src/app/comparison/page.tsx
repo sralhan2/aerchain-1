@@ -1,6 +1,7 @@
-import { getComparisonData } from "@/lib/comparison";
+import { getComparisonData, computeVendorTotals, computeCheapestPerLine } from "@/lib/comparison";
 import { RFX } from "@/lib/rfx-data";
 import { ComparisonGrid } from "@/components/ComparisonGrid";
+import { AnalystChat } from "@/components/AnalystChat";
 
 export const dynamic = "force-dynamic";
 
@@ -9,21 +10,13 @@ function money(n: number | null) {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
 }
 
-export default function ComparisonPage() {
-  const { rfxLines, vendors, grid } = getComparisonData();
+export default async function ComparisonPage({ searchParams }: { searchParams: Promise<{ lines?: string }> }) {
+  const { lines: linesParam } = await searchParams;
+  const selectedIds = linesParam ? linesParam.split(",").filter(Boolean) : null;
+  const { rfxLines, vendors, grid, isFiltered } = await getComparisonData(selectedIds);
 
-  const vendorTotals = vendors.map((v) => {
-    let total = 0;
-    let reviewCount = 0;
-    for (const line of rfxLines) {
-      const cell = grid[line.id][v.id];
-      if (cell.status === "quoted" && cell.normalizedPriceInr !== null) {
-        total += cell.normalizedPriceInr * line.qty;
-      }
-      if (cell.flags.length > 0 || (cell.confidence !== null && cell.confidence < 0.9)) reviewCount++;
-    }
-    return { ...v, estTotal: total, reviewCount };
-  });
+  const vendorTotals = computeVendorTotals(rfxLines, vendors, grid);
+  const cheapestPerLine = computeCheapestPerLine(rfxLines, vendors, grid);
 
   const cheapestCoveredVendor = [...vendorTotals]
     .filter((v) => v.linesQuoted === rfxLines.length)
@@ -35,7 +28,8 @@ export default function ComparisonPage() {
         <div className="text-xs font-mono uppercase tracking-wider text-orange-700">RFx Copilot · Comparison</div>
         <h1 className="text-2xl font-semibold mt-1">{RFX.title}</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          {RFX.buyerOrg} · {rfxLines.length} line items · {vendors.length} vendors responded
+          {RFX.buyerOrg} · {rfxLines.length} line item{rfxLines.length === 1 ? "" : "s"}
+          {isFiltered ? " matched to your draft" : ""} · {vendors.length} vendors responded
         </p>
       </header>
 
@@ -75,7 +69,9 @@ export default function ComparisonPage() {
         what the grid below is for.
       </p>
 
-      <ComparisonGrid rfxLines={rfxLines} vendors={vendors} grid={grid} />
+      <ComparisonGrid rfxLines={rfxLines} vendors={vendors} grid={grid} cheapestPerLine={cheapestPerLine} linesParam={linesParam ?? null} />
+
+      <AnalystChat linesParam={linesParam ?? null} />
     </div>
   );
 }

@@ -13,7 +13,13 @@ const FORMAT_ICON: Record<string, string> = {
   photo: "▨",
 };
 
-export function InboxClient({ initialStatus }: { initialStatus: Record<string, { linesExtracted: number } | null> }) {
+export function InboxClient({
+  initialStatus,
+  comparisonHref = "/comparison",
+}: {
+  initialStatus: Record<string, { linesExtracted: number } | null>;
+  comparisonHref?: string;
+}) {
   const [status, setStatus] = useState<Record<string, Status>>(() => {
     const s: Record<string, Status> = {};
     for (const v of VENDOR_META) s[v.id] = initialStatus[v.id] ? "extracted" : "not_extracted";
@@ -81,7 +87,7 @@ export function InboxClient({ initialStatus }: { initialStatus: Record<string, {
           {anyExtracting ? "Extracting…" : "Run extraction on all responses"}
         </button>
         {allExtracted && (
-          <Link href="/comparison" className="text-sm font-medium text-emerald-700 hover:underline">
+          <Link href={comparisonHref} className="text-sm font-medium text-emerald-700 hover:underline">
             View comparison →
           </Link>
         )}

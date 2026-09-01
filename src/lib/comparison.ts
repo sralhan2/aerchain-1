@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { getVendorsWithData } from "./store";
 import { RFX } from "./rfx-data";
 
 export type Cell = {
@@ -26,33 +26,31 @@ export type VendorSummary = {
   questionnaire: { question: string; answer: string }[];
 };
 
-export function getComparisonData() {
-  const vendorRows = db.prepare(`SELECT * FROM vendors ORDER BY id`).all() as any[];
+export async function getComparisonData(selectedLineIds?: string[] | null) {
+  const vendorRecords = await getVendorsWithData();
+  const rfxLines = selectedLineIds && selectedLineIds.length ? RFX.lines.filter((l) => selectedLineIds.includes(l.id)) : RFX.lines;
 
-  const vendors: VendorSummary[] = vendorRows.map((v) => {
-    const extractions = db.prepare(`SELECT * FROM extractions WHERE vendor_id = ?`).all(v.id) as any[];
-    const notesRow = db.prepare(`SELECT notes FROM vendor_notes WHERE vendor_id = ?`).get(v.id) as any;
-    const questionnaire = db.prepare(`SELECT question, answer FROM questionnaire_answers WHERE vendor_id = ?`).all(v.id) as any[];
-    const confidences = extractions.map((e) => e.confidence).filter((c) => typeof c === "number");
+  const vendors: VendorSummary[] = vendorRecords.map((v) => {
+    const confidences = v.extractions.map((e) => e.confidence).filter((c) => typeof c === "number");
     return {
       id: v.id,
       name: v.name,
       format: v.response_format,
       sourceFile: v.source_file,
-      currencyDetected: extractions[0]?.currency ?? null,
-      linesQuoted: extractions.filter((e) => e.rfx_line_id).length,
-      linesTotal: RFX.lines.length,
+      currencyDetected: v.extractions[0]?.currency ?? null,
+      linesQuoted: v.extractions.filter((e) => e.rfx_line_id && rfxLines.some((l) => l.id === e.rfx_line_id)).length,
+      linesTotal: rfxLines.length,
       avgConfidence: confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : null,
-      notes: notesRow?.notes ?? null,
-      questionnaire,
+      notes: v.notes,
+      questionnaire: v.questionnaire,
     };
   });
 
   const grid: Record<string, Record<string, Cell>> = {};
-  for (const line of RFX.lines) {
+  for (const line of rfxLines) {
     grid[line.id] = {};
-    for (const v of vendorRows) {
-      const row = db.prepare(`SELECT * FROM extractions WHERE vendor_id = ? AND rfx_line_id = ?`).get(v.id, line.id) as any;
+    for (const v of vendorRecords) {
+      const row = v.extractions.find((e) => e.rfx_line_id === line.id);
       if (!row) {
         grid[line.id][v.id] = {
           status: "not_quoted",
@@ -74,12 +72,51 @@ export function getComparisonData() {
           basis: row.unit_price_basis,
           confidence: row.confidence,
           citation: row.source_citation,
-          flags: JSON.parse(row.flags || "[]"),
+          flags: row.flags,
           vendorDescription: row.vendor_description,
         };
       }
     }
   }
 
-  return { rfxLines: RFX.lines, vendors, grid };
+  return { rfxLines, vendors, grid, isFiltered: !!(selectedLineIds && selectedLineIds.length) };
+}
+
+export type ComparisonData = Awaited<ReturnType<typeof getComparisonData>>;
+
+// Single source of truth for "who's cheapest on this line" — used by the
+// grid's ✓ marker, the Purchase Requisition's default vendor selections, and
+// the analyst chat's grounding context, so all three always agree.
+export function computeCheapestPerLine(
+  rfxLines: { id: string }[],
+  vendors: { id: string }[],
+  grid: Record<string, Record<string, Cell>>,
+  minConfidence = 0.7
+): Record<string, { vendorId: string; priceInr: number } | null> {
+  const out: Record<string, { vendorId: string; priceInr: number } | null> = {};
+  for (const line of rfxLines) {
+    let best: { vendorId: string; priceInr: number } | null = null;
+    for (const v of vendors) {
+      const c = grid[line.id][v.id];
+      if (c.status === "quoted" && c.normalizedPriceInr !== null && (c.confidence === null || c.confidence >= minConfidence)) {
+        if (!best || c.normalizedPriceInr < best.priceInr) best = { vendorId: v.id, priceInr: c.normalizedPriceInr };
+      }
+    }
+    out[line.id] = best;
+  }
+  return out;
+}
+
+// Vendor totals across whatever lines are in scope (respects filtering).
+export function computeVendorTotals(rfxLines: { id: string; qty: number }[], vendors: VendorSummary[], grid: Record<string, Record<string, Cell>>) {
+  return vendors.map((v) => {
+    let total = 0;
+    let reviewCount = 0;
+    for (const line of rfxLines) {
+      const cell = grid[line.id][v.id];
+      if (cell.status === "quoted" && cell.normalizedPriceInr !== null) total += cell.normalizedPriceInr * line.qty;
+      if (cell.flags.length > 0 || (cell.confidence !== null && cell.confidence < 0.9)) reviewCount++;
+    }
+    return { ...v, estTotal: total, reviewCount };
+  });
 }
