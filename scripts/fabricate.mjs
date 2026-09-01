@@ -11,6 +11,18 @@ const RFX = JSON.parse(fs.readFileSync(path.resolve("src/lib/rfx-data.json"), "u
 const OUT = path.resolve("data/vendor-docs");
 fs.mkdirSync(OUT, { recursive: true });
 
+// Vendor docs are read from two places for two different reasons:
+//  - data/vendor-docs: read server-side by the extraction API via fs
+//    (bundled into the serverless function via outputFileTracingIncludes).
+//  - public/vendor-docs: served statically so the Inbox's "View raw file"
+//    links (buyer-facing — the brief's "attached docs sitting alongside the
+//    numbers") actually resolve in the browser.
+// Writing only to the first and manually copying to the second is how this
+// went stale before (a vendor added later was missing from public/). Syncing
+// it here, every run, means it can't drift again.
+const PUBLIC_OUT = path.resolve("public/vendor-docs");
+fs.mkdirSync(PUBLIC_OUT, { recursive: true });
+
 const lineById = Object.fromEntries(RFX.lines.map((l) => [l.id, l]));
 
 // ---------- Vendor A: NexTech Systems — Excel, deliberately off-template ----------
@@ -73,7 +85,12 @@ async function vendorAExcel() {
 // ---------- Vendor B: Meridian IT Supplies — PDF, discount buried in footnote, 3 lines skipped ----------
 function vendorBPdf() {
   const doc = new PDFDocument({ margin: 50 });
-  doc.pipe(fs.createWriteStream(path.join(OUT, "vendor-b-meridian-quote.pdf")));
+  const outStream = fs.createWriteStream(path.join(OUT, "vendor-b-meridian-quote.pdf"));
+  const written = new Promise((resolve, reject) => {
+    outStream.on("finish", resolve);
+    outStream.on("error", reject);
+  });
+  doc.pipe(outStream);
 
   doc.fontSize(18).text("MERIDIAN IT SUPPLIES", { align: "left" });
   doc.fontSize(9).fillColor("#555").text("No. 22, Residency Road, Bengaluru 560025  |  GSTIN 29AAFCM1234K1Z5", { align: "left" });
@@ -156,7 +173,7 @@ function vendorBPdf() {
   );
 
   doc.end();
-  console.log("Vendor B (PDF) written");
+  return written.then(() => console.log("Vendor B (PDF) written"));
 }
 
 // ---------- Vendor C: Apex Global Traders — terse email, USD, "same as last year" ----------
@@ -334,8 +351,10 @@ async function vendorEWord() {
 }
 
 await vendorAExcel();
-vendorBPdf();
+await vendorBPdf();
 vendorCEmail();
 await vendorDPhoto();
 await vendorEWord();
-console.log("\nAll vendor documents fabricated in data/vendor-docs/");
+
+fs.cpSync(OUT, PUBLIC_OUT, { recursive: true });
+console.log(`\nAll vendor documents fabricated in data/vendor-docs/ and synced to public/vendor-docs/`);

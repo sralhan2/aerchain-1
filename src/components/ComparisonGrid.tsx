@@ -198,8 +198,20 @@ export function ComparisonGrid({
             </div>
           ) : (
             <div>
-              <div className="text-xs font-mono uppercase tracking-wide text-neutral-400">{selectedVendor.name}</div>
-              <div className="font-semibold mt-0.5">{selectedLine.description}</div>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-xs font-mono uppercase tracking-wide text-neutral-400">{selectedVendor.name}</div>
+                  <div className="font-semibold mt-0.5">{selectedLine.description}</div>
+                </div>
+                <a
+                  href={`/vendor-docs/${selectedVendor.sourceFile}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-neutral-400 hover:text-orange-700 underline underline-offset-2 whitespace-nowrap shrink-0"
+                >
+                  View original doc ↗
+                </a>
+              </div>
 
               {selectedCell.status === "not_quoted" ? (
                 <div className="mt-3 text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-md px-3 py-2">
