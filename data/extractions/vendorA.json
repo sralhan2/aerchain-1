@@ -1,0 +1,209 @@
+{
+  "currency_detected": "INR",
+  "lines": [
+    {
+      "vendor_description": "Business Ultrabook 14-inch, i5-1340P/16GB/512GB",
+      "matched_rfx_line_id": "L01",
+      "unit_price": 58500,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 1 | NX-UB14-I5 | 58500",
+      "flags": []
+    },
+    {
+      "vendor_description": "Business Ultrabook 14-inch Premium, i7-1360P/32GB/1TB",
+      "matched_rfx_line_id": "L02",
+      "unit_price": 93000,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 2 | NX-UB14-I7P | 93000 | Backlit keyboard incl.",
+      "flags": []
+    },
+    {
+      "vendor_description": "Rugged Field Laptop, MIL-STD-810H, i5/16GB/512GB",
+      "matched_rfx_line_id": "L03",
+      "unit_price": 148000,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 3 | NX-RG14 | 148000",
+      "flags": []
+    },
+    {
+      "vendor_description": "24\" FHD Monitor, IPS, HDMI+DP, adjustable stand",
+      "matched_rfx_line_id": "L04",
+      "unit_price": 9800,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 4 | NX-MN24 | 9800",
+      "flags": []
+    },
+    {
+      "vendor_description": "27\" QHD Monitor, IPS, USB-C 65W PD",
+      "matched_rfx_line_id": "L05",
+      "unit_price": 16900,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 5 | NX-MN27 | 16900",
+      "flags": []
+    },
+    {
+      "vendor_description": "34\" Ultrawide Curved Monitor, USB-C PD",
+      "matched_rfx_line_id": "L06",
+      "unit_price": 39500,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 6 | NX-MN34UW | 39500",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB-C Dual 4K Docking Station, 100W PD, GbE",
+      "matched_rfx_line_id": "L07",
+      "unit_price": 7350,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 7 | NX-DK100 | 7350",
+      "flags": []
+    },
+    {
+      "vendor_description": "Wireless Keyboard + Mouse Set",
+      "matched_rfx_line_id": "L08",
+      "unit_price": 1450,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 8 | NX-KM24 | 1450 | per set",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB Headset with Noise-Cancelling Mic",
+      "matched_rfx_line_id": "L09",
+      "unit_price": 1850,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 9 | NX-HS10 | 1850",
+      "flags": []
+    },
+    {
+      "vendor_description": "1080p Autofocus Webcam w/ Privacy Shutter",
+      "matched_rfx_line_id": "L10",
+      "unit_price": 2250,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 10 | NX-WC10 | 2250",
+      "flags": []
+    },
+    {
+      "vendor_description": "15.6\" Water-Resistant Laptop Backpack",
+      "matched_rfx_line_id": "L11",
+      "unit_price": 1650,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 11 | NX-BP15 | 1650",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB-C to HDMI Adapter, 4K@30Hz",
+      "matched_rfx_line_id": "L12",
+      "unit_price": 690,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 12 | NX-AD01 | 690",
+      "flags": []
+    },
+    {
+      "vendor_description": "Extended Warranty — Laptops, +2yr on-site",
+      "matched_rfx_line_id": "L13",
+      "unit_price": 6600,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 13 | NX-EW-LP2 | 6600 | OEM-backed",
+      "flags": []
+    },
+    {
+      "vendor_description": "Extended Warranty — Monitors, +2yr on-site",
+      "matched_rfx_line_id": "L14",
+      "unit_price": 1850,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 14 | NX-EW-MN2 | 1850 | OEM-backed",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB-C Charging Cable 1.5m, 100W braided",
+      "matched_rfx_line_id": "L15",
+      "unit_price": 470,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 15 | NX-CB15 | 470",
+      "flags": []
+    },
+    {
+      "vendor_description": "14\" Laptop Privacy Filter",
+      "matched_rfx_line_id": "L16",
+      "unit_price": 1250,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 16 | NX-PF14 | 1250",
+      "flags": []
+    },
+    {
+      "vendor_description": "1TB Portable SSD, USB 3.2",
+      "matched_rfx_line_id": "L17",
+      "unit_price": 6950,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 17 | NX-SSD1TB | 6950",
+      "flags": []
+    },
+    {
+      "vendor_description": "7-in-1 USB-C Hub, HDMI/USB-A x3/SD/PD",
+      "matched_rfx_line_id": "L18",
+      "unit_price": 2650,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.98,
+      "source_citation": "S.No 18 | NX-HUB7 | 2650",
+      "flags": []
+    }
+  ],
+  "unmatched_rfx_line_ids": [],
+  "questionnaire_answers": [
+    {
+      "question": "Average delivery lead time from PO (in days) for in-stock items?",
+      "answer": "10-12 working days"
+    },
+    {
+      "question": "Standard warranty term offered on laptops (years)?",
+      "answer": "1 year onsite (manufacturer)"
+    },
+    {
+      "question": "Do you provide on-site break-fix support in Bengaluru? (Y/N, and SLA)",
+      "answer": "Yes — NBD (Next Business Day) SLA"
+    },
+    {
+      "question": "Two customer references for orders of similar scale in the last 12 months.",
+      "answer": "Reference 1: Cognizant Technology Solutions — 450 unit refresh, Jan 2026; Reference 2: Aditya Birla Capital — 210 unit refresh, Nov 2025"
+    },
+    {
+      "question": "Do you accept partial shipment / partial invoicing?",
+      "answer": "Yes, category-wise"
+    }
+  ],
+  "vendor_notes": "Payment terms: 30% advance, 70% on delivery. Freight: included within Bengaluru city limits. Quote validity: 15 days from 22-Aug-2026. All prices quoted in INR excluding GST. NexTech Systems has quoted all 18 RFx line items with full availability matching or exceeding requested quantities. Extended warranties are OEM-backed."
+}

@@ -1,0 +1,183 @@
+{
+  "currency_detected": "INR",
+  "lines": [
+    {
+      "vendor_description": "Business Ultrabook 14\" (i5/16GB/512GB)",
+      "matched_rfx_line_id": "L01",
+      "unit_price": 57200,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Business Ultrabook 14\" (i5/16GB/512GB) Rs 57,200",
+      "flags": []
+    },
+    {
+      "vendor_description": "Business Ultrabook 14\" Premium (i7/32GB/1TB)",
+      "matched_rfx_line_id": "L02",
+      "unit_price": 91500,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Business Ultrabook 14\" Premium (i7/32GB/1TB) Rs 91,500",
+      "flags": []
+    },
+    {
+      "vendor_description": "24\" FHD Monitor",
+      "matched_rfx_line_id": "L04",
+      "unit_price": 9400,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "24\" FHD Monitor Rs 9,400",
+      "flags": []
+    },
+    {
+      "vendor_description": "27\" QHD Monitor",
+      "matched_rfx_line_id": "L05",
+      "unit_price": 16200,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "27\" QHD Monitor Rs 16,200",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB-C Dual Monitor Docking Station, 100W",
+      "matched_rfx_line_id": "L07",
+      "unit_price": 7100,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "USB-C Dual Monitor Docking Station, 100W Rs 7,100",
+      "flags": []
+    },
+    {
+      "vendor_description": "Wireless Keyboard + Mouse Combo",
+      "matched_rfx_line_id": "L08",
+      "unit_price": 1380,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Wireless Keyboard + Mouse Combo Rs 1,380",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB Wired Headset, NC mic",
+      "matched_rfx_line_id": "L09",
+      "unit_price": 1790,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "USB Wired Headset, NC mic Rs 1,790",
+      "flags": []
+    },
+    {
+      "vendor_description": "1080p Webcam w/ privacy shutter",
+      "matched_rfx_line_id": "L10",
+      "unit_price": 2150,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "1080p Webcam w/ privacy shutter Rs 2,150",
+      "flags": []
+    },
+    {
+      "vendor_description": "Laptop Backpack 15.6\"",
+      "matched_rfx_line_id": "L11",
+      "unit_price": 1550,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Laptop Backpack 15.6\" Rs 1,550",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB-C to HDMI Adapter",
+      "matched_rfx_line_id": "L12",
+      "unit_price": 640,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "USB-C to HDMI Adapter Rs 640",
+      "flags": []
+    },
+    {
+      "vendor_description": "Extended Warranty — Laptop, +2yr",
+      "matched_rfx_line_id": "L13",
+      "unit_price": 6350,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Extended Warranty — Laptop, +2yr Rs 6,350",
+      "flags": []
+    },
+    {
+      "vendor_description": "Extended Warranty — Monitor, +2yr",
+      "matched_rfx_line_id": "L14",
+      "unit_price": 1720,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Extended Warranty — Monitor, +2yr Rs 1,720",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB-C Charging Cable 1.5m",
+      "matched_rfx_line_id": "L15",
+      "unit_price": 440,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "USB-C Charging Cable 1.5m Rs 440",
+      "flags": []
+    },
+    {
+      "vendor_description": "Laptop Privacy Screen Filter",
+      "matched_rfx_line_id": "L16",
+      "unit_price": 1180,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Laptop Privacy Screen Filter Rs 1,180",
+      "flags": []
+    },
+    {
+      "vendor_description": "USB-C 7-in-1 Hub",
+      "matched_rfx_line_id": "L18",
+      "unit_price": 2500,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "USB-C 7-in-1 Hub Rs 2,500",
+      "flags": []
+    }
+  ],
+  "unmatched_rfx_line_ids": [
+    "L03",
+    "L06",
+    "L17"
+  ],
+  "questionnaire_answers": [
+    {
+      "question": "Average delivery lead time from PO (in days) for in-stock items?",
+      "answer": "14 working days"
+    },
+    {
+      "question": "Standard warranty term offered on laptops (years)?",
+      "answer": "1 year onsite"
+    },
+    {
+      "question": "Do you provide on-site break-fix support in Bengaluru? (Y/N, and SLA)",
+      "answer": "Yes, 48-hour SLA"
+    },
+    {
+      "question": "Two customer references for orders of similar scale in the last 12 months.",
+      "answer": "Wipro Enterprises (180 units, Mar 2026); Titan Company (95 units, Jun 2026)"
+    },
+    {
+      "question": "Do you accept partial shipment / partial invoicing?",
+      "answer": "Yes"
+    }
+  ],
+  "vendor_notes": "All prices are in INR, excluding GST. Vendor explicitly states that Rugged laptops (L03), 34\\\" ultrawide monitors (L06), and external SSDs (L17) are not part of their current catalog and are not quoted. A 4% volume discount applies to the total order value on orders exceeding Rs 50,00,000, applied at invoicing; this discount is not reflected in the unit prices quoted above. Freight is extra and billed at actuals. Quotation validity: 10 days from 21-Aug-2026."
+}

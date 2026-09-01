@@ -1,0 +1,150 @@
+{
+  "currency_detected": "INR",
+  "lines": [
+    {
+      "vendor_description": "Ultrabook 14in i5/16/512",
+      "matched_rfx_line_id": "L01",
+      "unit_price": 56800,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Ultrabook 14in i5/16/512 — 56,800",
+      "flags": []
+    },
+    {
+      "vendor_description": "Ultrabook 14in i7/32/1TB",
+      "matched_rfx_line_id": "L02",
+      "unit_price": 90200,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Ultrabook 14in i7/32/1TB — 90,200",
+      "flags": []
+    },
+    {
+      "vendor_description": "Monitor 24in FHD",
+      "matched_rfx_line_id": "L04",
+      "unit_price": 9200,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Monitor 24in FHD — 9,200",
+      "flags": []
+    },
+    {
+      "vendor_description": "Monitor 27in QHD",
+      "matched_rfx_line_id": "L05",
+      "unit_price": 15900,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Monitor 27in QHD — 15,900",
+      "flags": []
+    },
+    {
+      "vendor_description": "Docking Stn USB-C 100W",
+      "matched_rfx_line_id": "L07",
+      "unit_price": 6950,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Docking Stn USB-C 100W — 6,950",
+      "flags": []
+    },
+    {
+      "vendor_description": "Kb+Mouse Combo Wireless",
+      "matched_rfx_line_id": "L08",
+      "unit_price": 1400,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Kb+Mouse Combo Wireless — 1,400",
+      "flags": []
+    },
+    {
+      "vendor_description": "Headset USB NC",
+      "matched_rfx_line_id": "L09",
+      "unit_price": 1700,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Headset USB NC — 1,700",
+      "flags": []
+    },
+    {
+      "vendor_description": "Webcam 1080p",
+      "matched_rfx_line_id": "L10",
+      "unit_price": 2100,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Webcam 1080p — 2,100",
+      "flags": []
+    },
+    {
+      "vendor_description": "Backpack 15.6in",
+      "matched_rfx_line_id": "L11",
+      "unit_price": 1500,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "Backpack 15.6in — 1,500",
+      "flags": []
+    },
+    {
+      "vendor_description": "HDMI Adapter USB-C (BOX/5)",
+      "matched_rfx_line_id": "L12",
+      "unit_price": 3100,
+      "currency": "INR",
+      "unit_price_basis": "per_box_of_5",
+      "confidence": 0.95,
+      "source_citation": "HDMI Adapter USB-C (BOX/5) — 3,100",
+      "flags": [
+        "unit_mismatch"
+      ]
+    },
+    {
+      "vendor_description": "Charging Cable 1.5m (BOX/5)",
+      "matched_rfx_line_id": "L15",
+      "unit_price": 2050,
+      "currency": "INR",
+      "unit_price_basis": "per_box_of_5",
+      "confidence": 0.95,
+      "source_citation": "Charging Cable 1.5m (BOX/5) — 2,050",
+      "flags": [
+        "unit_mismatch"
+      ]
+    },
+    {
+      "vendor_description": "Privacy Filter 14in (BOX/5)",
+      "matched_rfx_line_id": "L16",
+      "unit_price": 5700,
+      "currency": "INR",
+      "unit_price_basis": "per_box_of_5",
+      "confidence": 0.95,
+      "source_citation": "Privacy Filter 14in (BOX/5) — 5,700",
+      "flags": [
+        "unit_mismatch"
+      ]
+    },
+    {
+      "vendor_description": "USB-C Hub 7in1",
+      "matched_rfx_line_id": "L18",
+      "unit_price": 2450,
+      "currency": "INR",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.95,
+      "source_citation": "USB-C Hub 7in1 — 2,450",
+      "flags": []
+    }
+  ],
+  "unmatched_rfx_line_ids": [
+    "L03",
+    "L06",
+    "L13",
+    "L14",
+    "L17"
+  ],
+  "questionnaire_answers": [],
+  "vendor_notes": "Prices are ex-GST. Items marked BOX/5 are sold in packs of 5 only; the rate is per box. The buyer requested per-unit pricing, so L12 (HDMI Adapter @ Rs 3,100/box), L15 (Charging Cable @ Rs 2,050/box), and L16 (Privacy Filter @ Rs 5,700/box) are flagged unit_mismatch.\n\nVendor explicitly states the following are NOT stocked: Rugged laptops (L03), ultrawide monitors (L06), extended warranties (L13, L14), and SSDs (L17).\n\nContact: 98xxx-xxxxx | Whitefield, Bengaluru.\n\nNo questionnaire answers provided in this rate card. Effective date: 18-Aug-2026."
+}

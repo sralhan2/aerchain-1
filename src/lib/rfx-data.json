@@ -1,0 +1,37 @@
+{
+  "title": "IT Hardware Refresh — FY27 Q1",
+  "buyerOrg": "Meridian Financial Services",
+  "currency": "INR",
+  "issuedDate": "2026-08-18",
+  "dueDate": "2026-08-27",
+  "deliveryWindow": "Within 21 days of PO",
+  "deliveryLocation": "Bengaluru, Whitefield DC",
+  "scope": "Refresh of end-user IT hardware for a 300-seat office expansion: laptops, monitors, docking stations, peripherals, and extended warranty coverage. Vendors may quote partial scope but must flag any lines not quoted.",
+  "questionnaire": [
+    { "q": "Average delivery lead time from PO (in days) for in-stock items?" },
+    { "q": "Standard warranty term offered on laptops (years)?" },
+    { "q": "Do you provide on-site break-fix support in Bengaluru? (Y/N, and SLA)" },
+    { "q": "Two customer references for orders of similar scale in the last 12 months." },
+    { "q": "Do you accept partial shipment / partial invoicing?" }
+  ],
+  "lines": [
+    { "id": "L01", "category": "Laptop", "description": "Business Ultrabook 14\"", "spec": "i5-1340P, 16GB RAM, 512GB SSD, FHD", "qty": 120, "unit": "unit" },
+    { "id": "L02", "category": "Laptop", "description": "Business Ultrabook 14\" — Premium", "spec": "i7-1360P, 32GB RAM, 1TB SSD, FHD, backlit kbd", "qty": 40, "unit": "unit" },
+    { "id": "L03", "category": "Laptop", "description": "Rugged Field Laptop 14\"", "spec": "i5-1340P, 16GB RAM, 512GB SSD, MIL-STD-810H", "qty": 15, "unit": "unit" },
+    { "id": "L04", "category": "Monitor", "description": "24\" FHD Monitor", "spec": "1920x1080, IPS, HDMI+DP, height adjustable", "qty": 150, "unit": "unit" },
+    { "id": "L05", "category": "Monitor", "description": "27\" QHD Monitor", "spec": "2560x1440, IPS, USB-C 65W PD", "qty": 60, "unit": "unit" },
+    { "id": "L06", "category": "Monitor", "description": "34\" Ultrawide Monitor", "spec": "3440x1440, curved, USB-C PD", "qty": 10, "unit": "unit" },
+    { "id": "L07", "category": "Docking Station", "description": "USB-C Dual Monitor Dock", "spec": "100W PD, dual 4K@60Hz, GbE", "qty": 130, "unit": "unit" },
+    { "id": "L08", "category": "Peripheral", "description": "Wireless Keyboard + Mouse Combo", "spec": "2.4GHz + BT, standard layout", "qty": 160, "unit": "set" },
+    { "id": "L09", "category": "Peripheral", "description": "USB Wired Headset", "spec": "Noise-cancelling mic, USB-A", "qty": 160, "unit": "unit" },
+    { "id": "L10", "category": "Peripheral", "description": "1080p Webcam", "spec": "Autofocus, USB-A, privacy shutter", "qty": 100, "unit": "unit" },
+    { "id": "L11", "category": "Peripheral", "description": "Laptop Backpack", "spec": "15.6\" compatible, water-resistant", "qty": 175, "unit": "unit" },
+    { "id": "L12", "category": "Peripheral", "description": "USB-C to HDMI Adapter", "spec": "4K@30Hz", "qty": 175, "unit": "unit" },
+    { "id": "L13", "category": "Warranty", "description": "Extended Warranty — Laptop", "spec": "+2 years on-site, beyond standard 1yr", "qty": 175, "unit": "unit" },
+    { "id": "L14", "category": "Warranty", "description": "Extended Warranty — Monitor", "spec": "+2 years on-site, beyond standard 1yr", "qty": 220, "unit": "unit" },
+    { "id": "L15", "category": "Peripheral", "description": "USB-C Charging Cable 1.5m", "spec": "100W rated, braided", "qty": 175, "unit": "unit" },
+    { "id": "L16", "category": "Peripheral", "description": "Laptop Privacy Screen Filter", "spec": "14\" compatible", "qty": 175, "unit": "unit" },
+    { "id": "L17", "category": "Peripheral", "description": "External SSD 1TB", "spec": "USB 3.2, portable", "qty": 30, "unit": "unit" },
+    { "id": "L18", "category": "Peripheral", "description": "Multi-port USB-C Hub", "spec": "7-in-1: HDMI, USB-A x3, SD, PD passthrough", "qty": 50, "unit": "unit" }
+  ]
+}

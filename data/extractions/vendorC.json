@@ -1,0 +1,92 @@
+{
+  "currency_detected": "USD",
+  "lines": [
+    {
+      "vendor_description": "Laptops: standard config",
+      "matched_rfx_line_id": "L01",
+      "unit_price": 690,
+      "currency": "USD",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.85,
+      "source_citation": "Laptops: standard config $690/unit",
+      "flags": [
+        "currency_mismatch"
+      ]
+    },
+    {
+      "vendor_description": "Laptops: premium config",
+      "matched_rfx_line_id": "L02",
+      "unit_price": 1080,
+      "currency": "USD",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.85,
+      "source_citation": "premium config $1080/unit",
+      "flags": [
+        "currency_mismatch"
+      ]
+    },
+    {
+      "vendor_description": "Monitors: 24\"",
+      "matched_rfx_line_id": "L04",
+      "unit_price": 112,
+      "currency": "USD",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.9,
+      "source_citation": "Monitors: 24\" $112/unit",
+      "flags": [
+        "currency_mismatch"
+      ]
+    },
+    {
+      "vendor_description": "Monitors: 27\"",
+      "matched_rfx_line_id": "L05",
+      "unit_price": 195,
+      "currency": "USD",
+      "unit_price_basis": "per_unit",
+      "confidence": 0.9,
+      "source_citation": "27\" $195/unit",
+      "flags": [
+        "currency_mismatch"
+      ]
+    }
+  ],
+  "unmatched_rfx_line_ids": [
+    "L03",
+    "L06",
+    "L07",
+    "L08",
+    "L09",
+    "L10",
+    "L11",
+    "L12",
+    "L13",
+    "L14",
+    "L15",
+    "L16",
+    "L17",
+    "L18"
+  ],
+  "questionnaire_answers": [
+    {
+      "question": "Average delivery lead time from PO (in days) for in-stock items?",
+      "answer": "About 3 weeks for the laptops/monitors since they're imported"
+    },
+    {
+      "question": "Standard warranty term offered on laptops (years)?",
+      "answer": "1yr standard warranty on laptops"
+    },
+    {
+      "question": "Do you provide on-site break-fix support in Bengaluru? (Y/N, and SLA)",
+      "answer": "Yes, via a local partner (Bangalore) - no specific SLA mentioned"
+    },
+    {
+      "question": "Two customer references for orders of similar scale in the last 12 months.",
+      "answer": "Can share references if this moves forward"
+    },
+    {
+      "question": "Do you accept partial shipment / partial invoicing?",
+      "answer": "Yes we can do partial shipments"
+    }
+  ],
+  "vendor_notes": "Critical ambiguity: Vendor states \"Everything else (docks, keyboards, headsets, webcams, bags, adapters, cables, privacy filters, hub, warranties) — same as last year, we haven't changed those rates. You have the old sheet.\" No numeric prices are provided in this document for L03 (Rugged Field Laptop), L06 (34\" Ultrawide Monitor - vendor explicitly does not carry this), L07 (Docking Station), L08 (Keyboard+Mouse), L09 (Headset), L10 (Webcam), L11 (Backpack), L12 (USB-C to HDMI Adapter), L13 (Laptop Extended Warranty), L14 (Monitor Extended Warranty), L15 (USB-C Cable), L16 (Privacy Screen), L17 (External SSD), or L18 (Multi-port Hub). Without access to \"the old sheet\" referenced by the vendor, these prices cannot be extracted. Do NOT guess or carry forward any prices.\n\nCommercial terms: All prices are USD, ex-works. Freight is extra and will be quoted separately once order is confirmed. All quoted prices flagged for currency_mismatch as RFx appears to expect INR.\n\nL06 (34\" Ultrawide Monitor): Vendor explicitly does not carry this item (\"Don't carry the 34\\\" ultrawide\").\n\nL03 (Rugged Field Laptop): Not mentioned in vendor's response - unclear if included in \"same as last year\" reference or if vendor does not carry this specialized item."
+}
