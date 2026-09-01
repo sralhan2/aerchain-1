@@ -1,27 +1,36 @@
 import fs from "fs";
 import path from "path";
 import ExcelJS from "exceljs";
-// pdf-parse@1.x bundles an ancient (2017) copy of pdf.js that throws a hard
-// "bad XRef entry" FormatError on some validly-structured PDFs (it hit our
-// own pdfkit-generated vendor quote in production). pdfjs-dist is Mozilla's
-// actively maintained parser — using it directly avoids that fragile
-// dependency entirely.
-import { getDocument, GlobalWorkerOptions } from "pdfjs-dist/legacy/build/pdf.mjs";
-
-// Node has no browser Worker global, so pdfjs-dist falls back to a "fake
-// worker" that dynamically loads this file in-process — it still needs a
-// resolvable path to it, even though nothing actually runs in a separate
-// thread here. Building the path from process.cwd() rather than
-// require.resolve()/import.meta.url — Turbopack's build-time page-data
-// collection evaluates this module outside the normal module graph, where
-// those dynamic resolutions come back empty and the pdfjs-dist setter
-// throws on a non-string value.
-GlobalWorkerOptions.workerSrc = path.join(process.cwd(), "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs");
-const STANDARD_FONTS_DIR = path.join(process.cwd(), "node_modules/pdfjs-dist/standard_fonts") + "/";
 
 export type ParsedSource =
   | { kind: "text"; text: string }
   | { kind: "image"; base64: string; mediaType: "image/jpeg" | "image/png" };
+
+// Two prior parsers both failed in production:
+//   - pdf-parse@1.x bundles an ancient (2017) pdf.js that threw a hard
+//     "bad XRef entry" FormatError on our own pdfkit-generated vendor PDF.
+//   - pdfjs-dist directly crashed Vercel's serverless runtime with
+//     "ReferenceError: DOMMatrix is not defined" — it expects a
+//     canvas-capable environment (via the optional @napi-rs/canvas native
+//     package) even for plain text extraction, and Vercel's Node runtime
+//     doesn't provide one.
+// unpdf wraps pdf.js in a build specifically meant for serverless/edge
+// runtimes with no canvas or DOM available — text extraction works without
+// either dependency.
+//
+// Loaded lazily, inside the function that needs it, rather than as a
+// top-level import: a module-level throw in a PDF library breaks the whole
+// shared file before any per-vendor try/catch ever runs, taking every
+// vendor down together instead of just the PDF one. Isolating it here means
+// a PDF-parsing failure can only ever fail the PDF vendor.
+async function parsePdf(filePath: string): Promise<string> {
+  const { extractText, getDocumentProxy } = await import("unpdf");
+
+  const buf = fs.readFileSync(filePath);
+  const doc = await getDocumentProxy(new Uint8Array(buf));
+  const { text } = await extractText(doc, { mergePages: true });
+  return text.trim();
+}
 
 export async function parseSource(filePath: string): Promise<ParsedSource> {
   const ext = path.extname(filePath).toLowerCase();
@@ -41,21 +50,12 @@ export async function parseSource(filePath: string): Promise<ParsedSource> {
   }
 
   if (ext === ".pdf") {
-    const buf = fs.readFileSync(filePath);
-    const doc = await getDocument({
-      data: new Uint8Array(buf),
-      useWorkerFetch: false,
-      isEvalSupported: false,
-      standardFontDataUrl: STANDARD_FONTS_DIR,
-    }).promise;
-    let text = "";
-    for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
-      const page = await doc.getPage(pageNum);
-      const content = await page.getTextContent();
-      text += content.items.map((item: any) => ("str" in item ? item.str : "")).join(" ") + "\n";
+    try {
+      const text = await parsePdf(filePath);
+      return { kind: "text", text };
+    } catch (err: any) {
+      throw new Error(`PDF parsing failed (${err?.message ?? "unknown error"}) — see server logs for the full trace.`);
     }
-    await doc.destroy();
-    return { kind: "text", text: text.trim() };
   }
 
   if (ext === ".txt") {
