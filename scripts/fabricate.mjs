@@ -3,6 +3,7 @@ import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 import { GROUND_TRUTH } from "./ground-truth.mjs";
 
 const RFX = JSON.parse(fs.readFileSync(path.resolve("src/lib/rfx-data.json"), "utf-8"));
@@ -40,6 +41,18 @@ async function vendorAExcel() {
     ["14\" Laptop Privacy Filter", "NX-PF14", GROUND_TRUTH.vendorA.lines.L16, 175, ""],
     ["1TB Portable SSD, USB 3.2", "NX-SSD1TB", GROUND_TRUTH.vendorA.lines.L17, 30, ""],
     ["7-in-1 USB-C Hub, HDMI/USB-A x3/SD/PD", "NX-HUB7", GROUND_TRUTH.vendorA.lines.L18, 50, ""],
+    ["24-Port Gigabit Switch, rack-mountable", "NX-SW24", GROUND_TRUTH.vendorA.lines.L19, 8, ""],
+    ["Wireless Access Point, Wi-Fi 6, PoE", "NX-AP6", GROUND_TRUTH.vendorA.lines.L20, 25, ""],
+    ["Adjustable Aluminium Laptop Stand", "NX-STAND16", GROUND_TRUTH.vendorA.lines.L21, 175, ""],
+    ["Wireless Presenter Clicker w/ Laser", "NX-CLICK1", GROUND_TRUTH.vendorA.lines.L22, 40, ""],
+    ["Conference Speakerphone, 6-mic, USB/BT", "NX-SPK6", GROUND_TRUTH.vendorA.lines.L23, 15, ""],
+    ["4K Conference Camera, auto-framing", "NX-CAM4K", GROUND_TRUTH.vendorA.lines.L24, 15, ""],
+    ["Desk-side UPS, 1kVA/600W", "NX-UPS1K", GROUND_TRUTH.vendorA.lines.L25, 30, ""],
+    ["6-Socket Surge Protector, 15A", "NX-SURGE6", GROUND_TRUTH.vendorA.lines.L26, 175, ""],
+    ["4-Bay NAS, diskless, GbE", "NX-NAS4B", GROUND_TRUTH.vendorA.lines.L27, 5, ""],
+    ["Ergonomic Vertical Mouse, wireless", "NX-MSEV1", GROUND_TRUTH.vendorA.lines.L28, 60, ""],
+    ["Endpoint Security License, 1yr/seat", "NX-SEC1Y", GROUND_TRUTH.vendorA.lines.L29, 300, "centrally managed"],
+    ["Laptop Cable Lock, keyed", "NX-LOCK1", GROUND_TRUTH.vendorA.lines.L30, 175, ""],
   ];
   items.forEach((row, i) => ws.addRow([i + 1, ...row]));
   ws.addRow([]);
@@ -98,6 +111,14 @@ function vendorBPdf() {
     ["USB-C Charging Cable 1.5m", GROUND_TRUTH.vendorB.lines.L15],
     ["Laptop Privacy Screen Filter", GROUND_TRUTH.vendorB.lines.L16],
     ["USB-C 7-in-1 Hub", GROUND_TRUTH.vendorB.lines.L18],
+    ["Adjustable Laptop Stand", GROUND_TRUTH.vendorB.lines.L21],
+    ["Wireless Presenter Clicker", GROUND_TRUTH.vendorB.lines.L22],
+    ["Conference Room Speakerphone", GROUND_TRUTH.vendorB.lines.L23],
+    ["4K Conference Room Camera", GROUND_TRUTH.vendorB.lines.L24],
+    ["Desk-side UPS, 1kVA", GROUND_TRUTH.vendorB.lines.L25],
+    ["6-Socket Surge Protector", GROUND_TRUTH.vendorB.lines.L26],
+    ["Ergonomic Vertical Mouse", GROUND_TRUTH.vendorB.lines.L28],
+    ["Laptop Cable Lock", GROUND_TRUTH.vendorB.lines.L30],
   ];
 
   const colItemX = 50;
@@ -124,7 +145,8 @@ function vendorBPdf() {
 
   doc.moveDown(1);
   doc.fontSize(9).fillColor("#000").text(
-    "Note: Rugged laptops, 34\" ultrawide monitors, and external SSDs are not part of our current catalog and are not quoted above.",
+    "Note: Rugged laptops, 34\" ultrawide monitors, external SSDs, networking gear (switches/APs), NAS units, and " +
+      "software licenses are not part of our current catalog and are not quoted above.",
     { width: 500 }
   );
   doc.moveDown(1.5);
@@ -151,8 +173,13 @@ Thanks for sending this over. Quick reply, been slammed this week.
 Laptops: standard config $${gt.explicitLines.L01}/unit, premium config $${gt.explicitLines.L02}/unit.
 Monitors: 24" $${gt.explicitLines.L04}/unit, 27" $${gt.explicitLines.L05}/unit. Don't carry the 34" ultrawide.
 
-Everything else (docks, keyboards, headsets, webcams, bags, adapters, cables, privacy filters,
-hub, warranties) — same as last year, we haven't changed those rates. You have the old sheet.
+Everything else that was on last year's list (docks, keyboards, headsets, webcams, bags, adapters,
+cables, privacy filters, hub, warranties) — same as last year, we haven't changed those rates. You
+have the old sheet.
+
+The networking gear, conference room stuff, UPS, surge protectors, NAS, security licenses and
+cable locks are all new asks this cycle - we don't have a rate for any of that, would need to
+source and get back to you separately.
 
 Freight extra, will quote separately once order is confirmed. Prices in USD, ex-works.
 
@@ -186,6 +213,11 @@ async function vendorDPhoto() {
     ["Charging Cable 1.5m (BOX/5)", gt.lines.L15],
     ["Privacy Filter 14in (BOX/5)", gt.lines.L16],
     ["USB-C Hub 7in1", gt.lines.L18],
+    ["Laptop Stand Adjustable", gt.lines.L21],
+    ["Presenter Clicker Wireless", gt.lines.L22],
+    ["Surge Protector 6-Skt", gt.lines.L26],
+    ["Mouse Vertical Wireless", gt.lines.L28],
+    ["Cable Lock Keyed", gt.lines.L30],
   ];
 
   const headerY = 128;
@@ -218,7 +250,7 @@ async function vendorDPhoto() {
       ${rowsSvg}
       <line x1="40" y1="${firstRowY + rows.length * rowH - 10}" x2="${width - 40}" y2="${firstRowY + rows.length * rowH - 10}" stroke="#999" stroke-width="1"/>
       <text x="40" y="${firstRowY + rows.length * rowH + 22}" font-family="Courier New, monospace" font-size="14" fill="#333">Prices ex-GST. Items marked BOX/5 sold in packs of 5 only, rate is per box.</text>
-      <text x="40" y="${firstRowY + rows.length * rowH + 44}" font-family="Courier New, monospace" font-size="14" fill="#333">Rugged laptops, ultrawide monitors, extended warranties, SSDs — not stocked.</text>
+      <text x="40" y="${firstRowY + rows.length * rowH + 44}" font-family="Courier New, monospace" font-size="14" fill="#333">Rugged laptops, ultrawide monitors, ext. warranties, SSDs, networking, AV, UPS, NAS, licenses — not stocked.</text>
       <text x="40" y="${firstRowY + rows.length * rowH + 66}" font-family="Courier New, monospace" font-size="13" fill="#777">Contact: 98xxx-xxxxx | Whitefield, Bengaluru</text>
     </g>
   </svg>`;
@@ -244,8 +276,66 @@ Partial shipment: Yes, no restriction
   console.log("Vendor D (questionnaire) written");
 }
 
+// ---------- Vendor E: Horizon Digital Traders — Word doc, commercials in prose paragraphs ----------
+async function vendorEWord() {
+  const gt = GROUND_TRUTH.vendorE;
+  const money = (n) => `Rs ${n.toLocaleString("en-IN")}`;
+
+  const explicitOrder = [
+    "L04", "L05", "L09", "L10", "L11", "L12", "L13", "L14", "L15", "L16", "L17", "L18",
+    "L19", "L20", "L21", "L22", "L23", "L24", "L25", "L26", "L27", "L28", "L29", "L30",
+  ];
+  const nameFor = (id) => lineById[id]?.description ?? id;
+  const explicitSentence =
+    explicitOrder.map((id) => `${nameFor(id)} at ${money(gt.lines[id])} per unit`).join(", ") + ".";
+
+  const p = (text, opts = {}) => new Paragraph({ children: [new TextRun({ text, ...opts })], spacing: { after: 200 } });
+
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({ text: "Horizon Digital Traders", heading: HeadingLevel.HEADING_1 }),
+          p("Commercial quotation in response to your RFx \"IT Hardware Refresh — FY27 Q1\", dated 25-Aug-2026. Validity: 14 days from date of this letter.", { italics: true }),
+          new Paragraph({ text: "Pricing", heading: HeadingLevel.HEADING_2 }),
+          p(
+            `We're pleased to quote for this refresh. On the laptops: pricing depends on the final order volume we settle on, so for the standard ` +
+              `Business Ultrabook 14" we're looking at somewhere between ${money(gt.rangeLines.L01.low)} and ${money(gt.rangeLines.L01.high)} per unit, and for the ` +
+              `Premium Business Ultrabook 14" between ${money(gt.rangeLines.L02.low)} and ${money(gt.rangeLines.L02.high)} per unit — happy to firm this up once we know ` +
+              `the committed quantity.`
+          ),
+          p(
+            `The docking station and keyboard/mouse combo we've priced together as a bundle rather than separately, since most of our customers take them ` +
+              `together — that bundle works out to ${money(gt.bundle.price)} per set (one dock, one keyboard/mouse combo).`
+          ),
+          p(`For the remaining items on your list, our rates per unit are as follows: ${explicitSentence}`),
+          p(
+            `We don't currently carry the Rugged Field Laptop or the 34" Ultrawide Monitor — these are non-standard configurations for us and we'd only be able ` +
+              `to quote them on request after checking with our supplier, so we haven't included a number for either.`
+          ),
+          p("All prices above are ex-GST, ex-works our Bengaluru warehouse. Freight will be billed at actuals."),
+          new Paragraph({ text: "Vendor Questionnaire", heading: HeadingLevel.HEADING_2 }),
+          p(
+            "On delivery lead time — for anything we hold in stock, you're looking at roughly 12 working days from PO. Our standard laptop warranty is " +
+              "1 year, onsite, through our manufacturer tie-up. We do provide on-site break-fix support within Bengaluru, with a 72-hour SLA. Two references " +
+              "for comparable orders in the last year: Manipal Technologies (140 units, Apr 2026) and a mid-sized BPO in Electronic City (90 units, name " +
+              "withheld pending their approval). And yes, we're fine with partial shipment and partial invoicing, billed category-wise."
+          ),
+          p("Please let us know if you'd like to proceed or need the volume-tier pricing firmed up.", { italics: true }),
+          p("Regards,\nSales Desk, Horizon Digital Traders", { italics: true }),
+        ],
+      },
+    ],
+  });
+
+  const buf = await Packer.toBuffer(doc);
+  fs.writeFileSync(path.join(OUT, "vendor-e-horizon-quote.docx"), buf);
+  console.log("Vendor E (Word doc) written");
+}
+
 await vendorAExcel();
 vendorBPdf();
 vendorCEmail();
 await vendorDPhoto();
+await vendorEWord();
 console.log("\nAll vendor documents fabricated in data/vendor-docs/");

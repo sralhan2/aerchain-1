@@ -32,6 +32,18 @@
     { "id": "L15", "category": "Peripheral", "description": "USB-C Charging Cable 1.5m", "spec": "100W rated, braided", "qty": 175, "unit": "unit" },
     { "id": "L16", "category": "Peripheral", "description": "Laptop Privacy Screen Filter", "spec": "14\" compatible", "qty": 175, "unit": "unit" },
     { "id": "L17", "category": "Peripheral", "description": "External SSD 1TB", "spec": "USB 3.2, portable", "qty": 30, "unit": "unit" },
-    { "id": "L18", "category": "Peripheral", "description": "Multi-port USB-C Hub", "spec": "7-in-1: HDMI, USB-A x3, SD, PD passthrough", "qty": 50, "unit": "unit" }
+    { "id": "L18", "category": "Peripheral", "description": "Multi-port USB-C Hub", "spec": "7-in-1: HDMI, USB-A x3, SD, PD passthrough", "qty": 50, "unit": "unit" },
+    { "id": "L19", "category": "Networking", "description": "24-Port Gigabit Switch", "spec": "Unmanaged, rack-mountable, metal chassis", "qty": 8, "unit": "unit" },
+    { "id": "L20", "category": "Networking", "description": "Wireless Access Point", "spec": "Wi-Fi 6, PoE powered, ceiling mount", "qty": 25, "unit": "unit" },
+    { "id": "L21", "category": "Peripheral", "description": "Adjustable Laptop Stand", "spec": "Aluminium, foldable, up to 16\"", "qty": 175, "unit": "unit" },
+    { "id": "L22", "category": "Peripheral", "description": "Wireless Presenter Clicker", "spec": "USB-A receiver, laser pointer", "qty": 40, "unit": "unit" },
+    { "id": "L23", "category": "Audio/Video", "description": "Conference Room Speakerphone", "spec": "USB + Bluetooth, 6-mic array, echo cancellation", "qty": 15, "unit": "unit" },
+    { "id": "L24", "category": "Audio/Video", "description": "4K Conference Room Camera", "spec": "USB, 4K@30fps, auto-framing, 120° FOV", "qty": 15, "unit": "unit" },
+    { "id": "L25", "category": "Power", "description": "Desk-side UPS", "spec": "1kVA / 600W, line-interactive, 2x battery backup outlets", "qty": 30, "unit": "unit" },
+    { "id": "L26", "category": "Power", "description": "6-Socket Surge Protector", "spec": "Individually switched, 15A, 1.5m cord", "qty": 175, "unit": "unit" },
+    { "id": "L27", "category": "Storage", "description": "4-Bay Network Attached Storage", "spec": "Diskless chassis, GbE, RAID support", "qty": 5, "unit": "unit" },
+    { "id": "L28", "category": "Peripheral", "description": "Ergonomic Vertical Mouse", "spec": "Wireless, USB-A receiver", "qty": 60, "unit": "unit" },
+    { "id": "L29", "category": "Software", "description": "Endpoint Security License", "spec": "1-year subscription, per-seat, centrally managed", "qty": 300, "unit": "license" },
+    { "id": "L30", "category": "Accessory", "description": "Laptop Cable Lock", "spec": "Keyed, Kensington-style slot", "qty": 175, "unit": "unit" }
   ]
 }

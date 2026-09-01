@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { serializeLinesParam } from "@/lib/line-selection";
 
 type Turn = { role: "user" | "assistant"; content: string };
 type Draft = {
@@ -30,11 +31,13 @@ export function RfxCopilotClient() {
       const res = await fetch("/api/match-rfx-lines", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines: draft.lines.map((l) => ({ category: l.category, description: l.description, spec: l.spec })) }),
+        body: JSON.stringify({
+          lines: draft.lines.map((l) => ({ category: l.category, description: l.description, spec: l.spec, qty: l.qty })),
+        }),
       });
       if (!res.ok) throw new Error(`Matching request failed (${res.status})`);
-      const { rfxLineIds } = await res.json();
-      const query = rfxLineIds?.length ? `?lines=${encodeURIComponent(rfxLineIds.join(","))}` : "";
+      const { rfxLineIds, qtyOverrides } = await res.json();
+      const query = rfxLineIds?.length ? `?lines=${encodeURIComponent(serializeLinesParam(rfxLineIds, qtyOverrides ?? {}))}` : "";
       router.push(`/inbox${query}`);
     } catch (err: any) {
       // If matching fails, fall back to showing the full fixed catalog rather than blocking the demo.

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import { getComparisonData } from "@/lib/comparison";
 import { RFX } from "@/lib/rfx-data";
+import { parseLinesParam } from "@/lib/line-selection";
 
 export const maxDuration = 30;
 
@@ -91,14 +92,20 @@ function renderPdf(payload: {
       doc.moveDown(1);
     }
 
-    doc.fontSize(12).fillColor("#000").text("Awarded vendor terms", { underline: true });
+    // doc.x carries over from the right-aligned "Total:" line above (pdfkit's
+    // text() only moves the cursor to where the CALLER put it, not back to
+    // the margin) — every text() call below must pass x=50 explicitly, or
+    // this section silently starts partway across the page and clips off
+    // the right edge on any PR short enough not to have already crossed a
+    // page break (which happened to reset x back to the margin by luck).
+    doc.fontSize(12).fillColor("#000").text("Awarded vendor terms", 50, doc.y, { underline: true, width: 495 });
     doc.moveDown(0.4);
     for (const v of payload.vendorTerms) {
       if (doc.y > 680) doc.addPage();
-      doc.fontSize(10).fillColor("#000").text(v.name, { continued: false });
+      doc.fontSize(10).fillColor("#000").text(v.name, 50, doc.y, { width: 495 });
       doc.fontSize(8.5).fillColor("#333");
       for (const qa of v.questionnaire) {
-        doc.text(`• ${qa.question} — ${qa.answer}`, { width: 495 });
+        doc.text(`• ${qa.question} — ${qa.answer}`, 50, doc.y, { width: 495 });
       }
       doc.moveDown(0.6);
     }
@@ -121,8 +128,8 @@ export async function POST(req: Request) {
     if (!awarded || typeof awarded !== "object") {
       return NextResponse.json({ error: "Missing awarded vendor selections" }, { status: 400 });
     }
-    const selectedLineIds: string[] | null = typeof lines === "string" && lines.length ? lines.split(",").filter(Boolean) : null;
-    const { rfxLines, vendors, grid } = await getComparisonData(selectedLineIds);
+    const { ids: selectedLineIds, qtyOverrides } = parseLinesParam(typeof lines === "string" ? lines : null);
+    const { rfxLines, vendors, grid } = await getComparisonData(selectedLineIds, qtyOverrides);
 
     const rows: { description: string; spec: string; qty: number; unit: string; vendorName: string; unitPrice: number; extended: number }[] = [];
     const excludedLines: string[] = [];

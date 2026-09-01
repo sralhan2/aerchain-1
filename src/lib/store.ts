@@ -9,12 +9,12 @@
 // between them — extraction reports success, but the comparison grid comes
 // back empty. That's why this needs real persistent storage in production.
 //
-// Locally (no POSTGRES_URL configured), we fall back to the same
-// better-sqlite3 file used throughout development, so `npm run dev` keeps
-// working with zero setup. In production, set POSTGRES_URL (Vercel's
-// Storage tab → Create Database → Postgres — a couple of clicks, no
-// separate account, env vars are injected automatically once connected to
-// the project) and this switches to it automatically.
+// Locally (no Postgres connection string configured), we fall back to the
+// same better-sqlite3 file used throughout development, so `npm run dev`
+// keeps working with zero setup. In production, connect a Postgres database
+// under the project's Storage tab (Neon's marketplace integration, a couple
+// of clicks, no separate account) and this switches to it automatically —
+// see resolveConnectionString() below for which env var names it accepts.
 
 export type ExtractionLine = {
   rfx_line_id: string | null;
@@ -38,22 +38,51 @@ export type VendorRecord = {
   questionnaire: { question: string; answer: string }[];
 };
 
-const usePostgres = !!process.env.POSTGRES_URL;
+// Different Postgres integrations name their env vars differently — Vercel's
+// legacy first-party Postgres product (and @vercel/postgres's implicit env
+// lookup) expects POSTGRES_URL, but the current Storage tab provisions
+// Postgres through Neon's marketplace integration, which by default names
+// its variable DATABASE_URL instead. Rather than depend on which one a given
+// setup happens to create, we check both explicitly and pass whichever we
+// find straight to the client as a connection string.
+function resolveConnectionString(): string | null {
+  return (
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.DATABASE_URL_UNPOOLED ||
+    null
+  );
+}
+
+const usePostgres = !!resolveConnectionString();
 
 // ---------------------------------------------------------------------------
 // Postgres backend (production)
 // ---------------------------------------------------------------------------
 
+let _pool: any = null;
+async function getPool() {
+  if (_pool) return _pool;
+  const connectionString = resolveConnectionString();
+  if (!connectionString) {
+    throw new Error("No Postgres connection string found (checked POSTGRES_URL, DATABASE_URL, and their _NON_POOLING/_UNPOOLED variants).");
+  }
+  const { createPool } = await import("@vercel/postgres");
+  _pool = createPool({ connectionString });
+  return _pool;
+}
+
 async function pgEnsureSchema() {
-  const { sql } = await import("@vercel/postgres");
-  await sql`CREATE TABLE IF NOT EXISTS vendors (
+  const pool = await getPool();
+  await pool.sql`CREATE TABLE IF NOT EXISTS vendors (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     response_format TEXT NOT NULL,
     source_file TEXT NOT NULL,
     qualified INTEGER DEFAULT 1
   )`;
-  await sql`CREATE TABLE IF NOT EXISTS extractions (
+  await pool.sql`CREATE TABLE IF NOT EXISTS extractions (
     id SERIAL PRIMARY KEY,
     vendor_id TEXT NOT NULL,
     rfx_line_id TEXT,
@@ -67,18 +96,18 @@ async function pgEnsureSchema() {
     flags TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
   )`;
-  await sql`CREATE TABLE IF NOT EXISTS unmatched_lines (
+  await pool.sql`CREATE TABLE IF NOT EXISTS unmatched_lines (
     id SERIAL PRIMARY KEY,
     vendor_id TEXT NOT NULL,
     rfx_line_id TEXT NOT NULL
   )`;
-  await sql`CREATE TABLE IF NOT EXISTS questionnaire_answers (
+  await pool.sql`CREATE TABLE IF NOT EXISTS questionnaire_answers (
     id SERIAL PRIMARY KEY,
     vendor_id TEXT NOT NULL,
     question TEXT NOT NULL,
     answer TEXT NOT NULL
   )`;
-  await sql`CREATE TABLE IF NOT EXISTS vendor_notes (
+  await pool.sql`CREATE TABLE IF NOT EXISTS vendor_notes (
     vendor_id TEXT PRIMARY KEY,
     notes TEXT
   )`;
@@ -97,50 +126,50 @@ async function pgReplaceVendorExtraction(
   questionnaire: { question: string; answer: string }[],
   notes: string
 ) {
-  const { sql } = await import("@vercel/postgres");
+  const pool = await getPool();
   await ensurePgSchema();
 
-  await sql`DELETE FROM extractions WHERE vendor_id = ${vendor.id}`;
-  await sql`DELETE FROM unmatched_lines WHERE vendor_id = ${vendor.id}`;
-  await sql`DELETE FROM questionnaire_answers WHERE vendor_id = ${vendor.id}`;
-  await sql`DELETE FROM vendor_notes WHERE vendor_id = ${vendor.id}`;
-  await sql`
+  await pool.sql`DELETE FROM extractions WHERE vendor_id = ${vendor.id}`;
+  await pool.sql`DELETE FROM unmatched_lines WHERE vendor_id = ${vendor.id}`;
+  await pool.sql`DELETE FROM questionnaire_answers WHERE vendor_id = ${vendor.id}`;
+  await pool.sql`DELETE FROM vendor_notes WHERE vendor_id = ${vendor.id}`;
+  await pool.sql`
     INSERT INTO vendors (id, name, response_format, source_file)
     VALUES (${vendor.id}, ${vendor.name}, ${vendor.format}, ${vendor.file})
     ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, response_format = EXCLUDED.response_format, source_file = EXCLUDED.source_file
   `;
 
   for (const line of lines) {
-    await sql`
+    await pool.sql`
       INSERT INTO extractions (vendor_id, rfx_line_id, vendor_description, unit_price, currency, unit_price_basis, normalized_unit_price_inr, confidence, source_citation, flags)
       VALUES (${vendor.id}, ${line.rfx_line_id}, ${line.vendor_description}, ${line.unit_price}, ${line.currency}, ${line.unit_price_basis}, ${line.normalized_unit_price_inr}, ${line.confidence}, ${line.source_citation}, ${JSON.stringify(line.flags)})
     `;
   }
   for (const rfxId of unmatchedRfxIds) {
-    await sql`INSERT INTO unmatched_lines (vendor_id, rfx_line_id) VALUES (${vendor.id}, ${rfxId})`;
+    await pool.sql`INSERT INTO unmatched_lines (vendor_id, rfx_line_id) VALUES (${vendor.id}, ${rfxId})`;
   }
   for (const qa of questionnaire) {
-    await sql`INSERT INTO questionnaire_answers (vendor_id, question, answer) VALUES (${vendor.id}, ${qa.question}, ${qa.answer})`;
+    await pool.sql`INSERT INTO questionnaire_answers (vendor_id, question, answer) VALUES (${vendor.id}, ${qa.question}, ${qa.answer})`;
   }
-  await sql`INSERT INTO vendor_notes (vendor_id, notes) VALUES (${vendor.id}, ${notes})`;
+  await pool.sql`INSERT INTO vendor_notes (vendor_id, notes) VALUES (${vendor.id}, ${notes})`;
 }
 
 async function pgGetExtractionStatus() {
-  const { sql } = await import("@vercel/postgres");
+  const pool = await getPool();
   await ensurePgSchema();
-  const { rows } = await sql`SELECT vendor_id, COUNT(*)::int as n, MAX(created_at) as last_run FROM extractions GROUP BY vendor_id`;
+  const { rows } = await pool.sql`SELECT vendor_id, COUNT(*)::int as n, MAX(created_at) as last_run FROM extractions GROUP BY vendor_id`;
   return rows as { vendor_id: string; n: number; last_run: string }[];
 }
 
 async function pgGetVendorsWithData(): Promise<VendorRecord[]> {
-  const { sql } = await import("@vercel/postgres");
+  const pool = await getPool();
   await ensurePgSchema();
-  const { rows: vendorRows } = await sql`SELECT * FROM vendors ORDER BY id`;
+  const { rows: vendorRows } = await pool.sql`SELECT * FROM vendors ORDER BY id`;
   const out: VendorRecord[] = [];
   for (const v of vendorRows as any[]) {
-    const { rows: extractionRows } = await sql`SELECT * FROM extractions WHERE vendor_id = ${v.id}`;
-    const { rows: notesRows } = await sql`SELECT notes FROM vendor_notes WHERE vendor_id = ${v.id}`;
-    const { rows: qaRows } = await sql`SELECT question, answer FROM questionnaire_answers WHERE vendor_id = ${v.id}`;
+    const { rows: extractionRows } = await pool.sql`SELECT * FROM extractions WHERE vendor_id = ${v.id}`;
+    const { rows: notesRows } = await pool.sql`SELECT notes FROM vendor_notes WHERE vendor_id = ${v.id}`;
+    const { rows: qaRows } = await pool.sql`SELECT question, answer FROM questionnaire_answers WHERE vendor_id = ${v.id}`;
     out.push({
       id: v.id,
       name: v.name,

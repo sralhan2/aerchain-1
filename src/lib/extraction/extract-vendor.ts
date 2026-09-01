@@ -116,7 +116,11 @@ function rfxLineSchemaForPrompt() {
     .join("\n");
 }
 
-export async function extractVendorResponse(vendorName: string, source: ParsedSource): Promise<ExtractionResult> {
+export async function extractVendorResponse(
+  vendorName: string,
+  source: ParsedSource,
+  extraText?: string
+): Promise<ExtractionResult> {
   const systemPrompt = `You are a procurement extraction analyst. You read a vendor's RFx response, in whatever format it arrives, and extract structured line-item pricing against the buyer's original RFx.
 
 Rules:
@@ -132,12 +136,20 @@ ${rfxLineSchemaForPrompt()}
 The RFx questionnaire:
 ${RFX.questionnaire.map((q, i) => `${i + 1}. ${q.q}`).join("\n")}`;
 
+  // Some vendors submitted their response as more than one file (e.g. a
+  // rate-card photo plus a separate questionnaire doc) — extraText carries
+  // any additional source text so it's extracted from the same pass rather
+  // than silently dropped.
+  const extraBlock = extraText
+    ? `\n\nThis vendor also submitted a separate document alongside the above — its content:\n\n${extraText}`
+    : "";
+
   const userContent: Anthropic.MessageParam["content"] =
     source.kind === "text"
       ? [
           {
             type: "text",
-            text: `Vendor: ${vendorName}\n\nHere is the raw content of their RFx response (parsed from the original file):\n\n${source.text}`,
+            text: `Vendor: ${vendorName}\n\nHere is the raw content of their RFx response (parsed from the original file):\n\n${source.text}${extraBlock}`,
           },
         ]
       : [
@@ -147,7 +159,7 @@ ${RFX.questionnaire.map((q, i) => `${i + 1}. ${q.q}`).join("\n")}`;
           },
           {
             type: "text",
-            text: `Vendor: ${vendorName}\n\nThe above image is a photo of this vendor's printed rate card, submitted as their RFx response. Extract everything you can read from it.`,
+            text: `Vendor: ${vendorName}\n\nThe above image is a photo of this vendor's printed rate card, submitted as their RFx response. Extract everything you can read from it.${extraBlock}`,
           },
         ];
 

@@ -2,6 +2,7 @@ import { getComparisonData, computeVendorTotals, computeCheapestPerLine } from "
 import { RFX } from "@/lib/rfx-data";
 import { ComparisonGrid } from "@/components/ComparisonGrid";
 import { AnalystChat } from "@/components/AnalystChat";
+import { parseLinesParam } from "@/lib/line-selection";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,8 @@ function money(n: number | null) {
 
 export default async function ComparisonPage({ searchParams }: { searchParams: Promise<{ lines?: string }> }) {
   const { lines: linesParam } = await searchParams;
-  const selectedIds = linesParam ? linesParam.split(",").filter(Boolean) : null;
-  const { rfxLines, vendors, grid, isFiltered } = await getComparisonData(selectedIds);
+  const { ids: selectedIds, qtyOverrides } = parseLinesParam(linesParam);
+  const { rfxLines, vendors, grid, isFiltered } = await getComparisonData(selectedIds, qtyOverrides);
 
   const vendorTotals = computeVendorTotals(rfxLines, vendors, grid);
   const cheapestPerLine = computeCheapestPerLine(rfxLines, vendors, grid);
@@ -33,8 +34,17 @@ export default async function ComparisonPage({ searchParams }: { searchParams: P
         </p>
       </header>
 
-      {/* Buyer-first summary: what to decide, not what to audit */}
-      <div className="grid grid-cols-4 gap-4 p-8 pb-4">
+      {/* This row answers a single-sourcing question — distinct from the per-line
+          split-award decision the grid + PR below it are for. Labeled explicitly
+          so it doesn't read as a summary of that table. */}
+      <div className="px-8 pt-6">
+        <div className="text-xs font-mono uppercase tracking-wide text-neutral-400">If you single-source with one vendor</div>
+        <p className="text-xs text-neutral-400 mt-0.5">
+          What each vendor would cost if they supplied everything alone — only meaningful for the vendor(s) marked "full quote"; a
+          partial total below just reflects what that vendor happened to price, not a comparable bid.
+        </p>
+      </div>
+      <div className="grid grid-cols-4 gap-4 p-8 pt-3 pb-4">
         {vendorTotals.map((v) => {
           const isCheapestFull = cheapestCoveredVendor?.id === v.id;
           return (
@@ -64,10 +74,13 @@ export default async function ComparisonPage({ searchParams }: { searchParams: P
         })}
       </div>
 
-      <p className="px-8 text-xs text-neutral-400 -mt-1 mb-2">
-        Totals only cover lines each vendor actually quoted — not an apples-to-apples number until gaps are resolved. That's exactly
-        what the grid below is for.
-      </p>
+      <div className="px-8 pt-2 pb-2">
+        <div className="text-xs font-mono uppercase tracking-wide text-neutral-400">Or split the order across vendors</div>
+        <p className="text-xs text-neutral-400 mt-0.5">
+          Award each line to whoever's cheapest and verified — usually lower total cost than single-sourcing, at the expense of
+          managing more than one vendor. Defaults to the lowest verified price per line below; override any line yourself.
+        </p>
+      </div>
 
       <ComparisonGrid rfxLines={rfxLines} vendors={vendors} grid={grid} cheapestPerLine={cheapestPerLine} linesParam={linesParam ?? null} />
 

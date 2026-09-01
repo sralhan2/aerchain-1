@@ -29,6 +29,17 @@ export const VENDOR_META = [
     format: "photo",
     formatLabel: "Photo of a rate card",
     file: "vendor-d-prime-ratecard.jpg",
+    // Sent as a follow-up alongside the photo — the questionnaire answers
+    // live here, not on the rate card itself.
+    extraFiles: ["vendor-d-questionnaire.txt"],
     receivedAt: "23-Aug-2026, 4:27 PM",
+  },
+  {
+    id: "vendorE",
+    name: "Horizon Digital Traders",
+    format: "docx",
+    formatLabel: "Word doc · prose quote",
+    file: "vendor-e-horizon-quote.docx",
+    receivedAt: "25-Aug-2026, 3:52 PM",
   },
 ] as const;

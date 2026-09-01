@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import fs from "fs";
 import path from "path";
 import { replaceVendorExtraction, getExtractionStatus } from "@/lib/store";
 import { parseSource } from "@/lib/extraction/parse-source";
@@ -9,7 +10,7 @@ import { VENDOR_META } from "@/lib/vendors";
 const VENDORS = VENDOR_META;
 const DOCS_DIR = path.resolve("data/vendor-docs");
 
-// Claude calls for 4 vendors run in parallel below; the longest single call
+// Claude calls for all vendors run in parallel below; the longest single call
 // (usually the photo, via vision) is what sets the wall-clock time, not the
 // sum of all four. Still needs headroom over Vercel's default 10s timeout.
 export const maxDuration = 60;
@@ -25,7 +26,11 @@ export async function POST(req: Request) {
     targets.map(async (vendor) => {
       const filePath = path.join(DOCS_DIR, vendor.file);
       const source = await parseSource(filePath);
-      const result = await extractVendorResponse(vendor.name, source);
+      const extraFiles = (vendor as { extraFiles?: readonly string[] }).extraFiles;
+      const extraText = extraFiles?.length
+        ? extraFiles.map((f) => fs.readFileSync(path.join(DOCS_DIR, f), "utf-8").trim()).join("\n\n---\n\n")
+        : undefined;
+      const result = await extractVendorResponse(vendor.name, source, extraText);
       return { vendor, result };
     })
   );

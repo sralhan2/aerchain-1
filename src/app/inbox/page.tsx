@@ -2,6 +2,7 @@ import { getExtractionStatus } from "@/lib/store";
 import { RFX } from "@/lib/rfx-data";
 import { VENDOR_META } from "@/lib/vendors";
 import { InboxClient } from "@/components/InboxClient";
+import { parseLinesParam } from "@/lib/line-selection";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     initialStatus[v.id] = row ? { linesExtracted: row.n } : null;
   }
 
-  const selectedIds = linesParam ? linesParam.split(",").filter(Boolean) : null;
+  const { ids: selectedIds } = parseLinesParam(linesParam);
   const lineCount = selectedIds ? selectedIds.length : RFX.lines.length;
   const comparisonHref = linesParam ? `/comparison?lines=${encodeURIComponent(linesParam)}` : "/comparison";
 
@@ -30,7 +31,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       </header>
 
       <div className="px-8 py-4 text-sm text-neutral-500">
-        Four responses have come back, each in the vendor's own format — nothing was forced into your template. Run extraction to
+        {VENDOR_META.length} responses have come back, each in the vendor's own format — nothing was forced into your template. Run extraction to
         read them into a structured comparison.
       </div>
 

@@ -26,9 +26,17 @@ export type VendorSummary = {
   questionnaire: { question: string; answer: string }[];
 };
 
-export async function getComparisonData(selectedLineIds?: string[] | null) {
+export async function getComparisonData(selectedLineIds?: string[] | null, qtyOverrides?: Record<string, number>) {
   const vendorRecords = await getVendorsWithData();
-  const rfxLines = selectedLineIds && selectedLineIds.length ? RFX.lines.filter((l) => selectedLineIds.includes(l.id)) : RFX.lines;
+  const baseLines = selectedLineIds && selectedLineIds.length ? RFX.lines.filter((l) => selectedLineIds.includes(l.id)) : RFX.lines;
+  // The fixed demo catalog's quantities are what the pre-fabricated vendor
+  // docs were priced against — but when a buyer's own draft asked for a
+  // different quantity on an unambiguously-matched line, show and total
+  // against what they actually asked for. Unit prices themselves don't
+  // change (this demo doesn't model volume-based pricing breaks).
+  const rfxLines = qtyOverrides && Object.keys(qtyOverrides).length
+    ? baseLines.map((l) => (qtyOverrides[l.id] ? { ...l, qty: qtyOverrides[l.id] } : l))
+    : baseLines;
 
   const vendors: VendorSummary[] = vendorRecords.map((v) => {
     const confidences = v.extractions.map((e) => e.confidence).filter((c) => typeof c === "number");

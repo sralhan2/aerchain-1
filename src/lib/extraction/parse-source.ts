@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import ExcelJS from "exceljs";
+import mammoth from "mammoth";
 
 export type ParsedSource =
   | { kind: "text"; text: string }
@@ -56,6 +57,13 @@ export async function parseSource(filePath: string): Promise<ParsedSource> {
     } catch (err: any) {
       throw new Error(`PDF parsing failed (${err?.message ?? "unknown error"}) — see server logs for the full trace.`);
     }
+  }
+
+  if (ext === ".docx") {
+    // mammoth extracts plain text from .docx with no native/canvas deps —
+    // same serverless-safety reasoning as unpdf above for PDFs.
+    const { value } = await mammoth.extractRawText({ path: filePath });
+    return { kind: "text", text: value.trim() };
   }
 
   if (ext === ".txt") {
