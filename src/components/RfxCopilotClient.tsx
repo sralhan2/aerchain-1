@@ -81,25 +81,28 @@ export function RfxCopilotClient() {
         )}
       </div>
 
-      {!draft && (
-        <div className="flex gap-2">
-          <input
-            className="flex-1 border border-neutral-300 rounded-md px-3 py-2 text-sm"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && input.trim() && !loading) send(input.trim());
-            }}
-            placeholder="Describe what you need to buy…"
-          />
-          <button
-            onClick={() => input.trim() && !loading && send(input.trim())}
-            disabled={loading || !input.trim()}
-            className="bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-md disabled:opacity-50"
-          >
-            Send
-          </button>
-        </div>
+      <div className="flex gap-2">
+        <input
+          className="flex-1 border border-neutral-300 rounded-md px-3 py-2 text-sm"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && input.trim() && !loading) send(input.trim());
+          }}
+          placeholder={draft ? "Ask for changes — e.g. \"add 20 more monitors\" or \"drop the warranty line\"…" : "Describe what you need to buy…"}
+        />
+        <button
+          onClick={() => input.trim() && !loading && send(input.trim())}
+          disabled={loading || !input.trim()}
+          className="bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-md disabled:opacity-50"
+        >
+          Send
+        </button>
+      </div>
+      {draft && (
+        <p className="text-xs text-neutral-400 mt-2">
+          The draft below updates in place with each change you ask for — nothing is final until you send it.
+        </p>
       )}
 
       {draft && (

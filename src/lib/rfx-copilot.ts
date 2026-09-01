@@ -54,7 +54,9 @@ const SYSTEM = `You are an RFx drafting co-pilot for a procurement buyer. You tu
 
 Ask at most 1-2 clarifying questions total — real category buyers don't want to be interrogated. Once you have enough to draft (category, rough scope/size, any hard constraints), finalize it. Don't ask about things you can reasonably default (standard questionnaire topics: delivery lead time, warranty, on-site support, references, partial shipment — always include these regardless of what the buyer says).
 
-Reference context — the buyer's org is Meridian Financial Services, Bengaluru (Whitefield DC), and this kind of refresh has historically run 15-20 SKUs across laptops/monitors/docks/peripherals/warranties. Use that only as a size sanity-check, not as fixed content — draft from what the buyer actually says.`;
+Reference context — the buyer's org is Meridian Financial Services, Bengaluru (Whitefield DC), and this kind of refresh has historically run 15-20 SKUs across laptops/monitors/docks/peripherals/warranties. Use that only as a size sanity-check, not as fixed content — draft from what the buyer actually says.
+
+Once a draft exists (you can see it in the earlier turns), the buyer will often keep talking — asking for line items to be added, removed, or changed, quantities adjusted, terms tweaked, or just asking a question about what you drafted. Treat every message after the first draft as a request against the CURRENT draft, not a new RFx from scratch: apply the change and return type "draft" again with the FULL updated RFx (every line item, not just the changed one — the buyer's screen replaces its whole draft with what you send). Only ask a clarifying question again if the requested change is genuinely ambiguous (e.g. "add more monitors" with no quantity given). Keep your message on a revision short — a sentence confirming what changed, not a re-summary of the whole RFx.`;
 
 export async function copilotStep(history: CopilotTurn[]) {
   const response = await getClient().messages.create({
