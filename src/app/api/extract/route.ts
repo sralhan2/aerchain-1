@@ -30,7 +30,19 @@ export async function POST(req: Request) {
       const extraText = extraFiles?.length
         ? extraFiles.map((f) => fs.readFileSync(path.join(DOCS_DIR, f), "utf-8").trim()).join("\n\n---\n\n")
         : undefined;
-      const result = await extractVendorResponse(vendor.name, source, extraText);
+      // Structured-output tool calls occasionally come back malformed or
+      // truncated on the first try — most often for the longest/most
+      // free-form source (a prose Word-doc quote has far more room for the
+      // model to wander than a tidy spreadsheet). That's a transient model
+      // hiccup, not a bug in this vendor's data, so it's worth one silent
+      // retry before surfacing it to the buyer as a failure to act on.
+      let result;
+      try {
+        result = await extractVendorResponse(vendor.name, source, extraText);
+      } catch (firstErr) {
+        console.warn(`extraction retry for ${vendor.name} after:`, firstErr);
+        result = await extractVendorResponse(vendor.name, source, extraText);
+      }
 
       // toolUse.input is an unchecked cast to ExtractionResult in
       // extract-vendor.ts — if the model's tool call ever comes back

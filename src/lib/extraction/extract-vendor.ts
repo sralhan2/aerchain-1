@@ -125,6 +125,8 @@ export async function extractVendorResponse(
 
 Rules:
 - Never invent a price. If a line isn't quoted, or the vendor says something like "same as last year" with no number given anywhere in the document, do NOT supply a number — list it in unmatched_rfx_line_ids or give it null unit_price with a flag, and explain in vendor_notes.
+- Price given as a RANGE tied to a condition the buyer hasn't confirmed yet (e.g. "Rs 56,000–58,500 depending on committed quantity"): the unit_price field only accepts one number, and picking the low end, high end, or a midpoint would be inventing a price just as much as guessing — do NOT put a number there. Set unit_price to null, add the "ambiguous_pricing" flag, and record the full range and its condition verbatim in vendor_notes so the buyer can see exactly what's pending, not a number you chose for them.
+- Price quoted as a BUNDLE covering more than one RFx line (e.g. one price for "one dock, one keyboard/mouse combo" together): do not split the bundle price yourself. Extract it as a single line matched to whichever RFx line is the closest fit, set unit_price_basis to "other", add a flag, and explain in vendor_notes exactly what's bundled together and at what combined price — a human decides how to allocate it, not you.
 - Never silently convert currency or units — extract exactly what's written (basis and currency as stated) and flag it. Conversion happens downstream, not by you.
 - Every extracted line needs a source_citation — a short verbatim snippet or cell/row reference that a human could use to find it in the original document.
 - Confidence should be genuinely calibrated: a clearly printed, unambiguous price is high confidence; a price read from an angled/blurry photo, or one that required inference, is lower.
@@ -188,6 +190,13 @@ ${RFX.questionnaire.map((q, i) => `${i + 1}. ${q.q}`).join("\n")}`;
 
   const result = toolUse.input as ExtractionResult;
   if (!Array.isArray(result.lines)) {
+    // Log the actual malformed payload (truncated) so a recurrence shows up
+    // in Vercel logs as real evidence instead of another guess — this is
+    // the one thing missing the last time this exact failure mode showed up.
+    console.error(
+      `malformed extraction for ${vendorName} — stop_reason=${response.stop_reason}, input=`,
+      JSON.stringify(toolUse.input).slice(0, 2000)
+    );
     throw new Error(`Extraction for ${vendorName} returned no usable line data — the model's response may have been malformed. Try again.`);
   }
 
