@@ -24,6 +24,7 @@ function needsAttention(cell: Cell) {
 }
 
 type CheapestMap = Record<string, { vendorId: string; priceInr: number } | null>;
+type Allocation = { vendorId: string; qty: number };
 
 export function ComparisonGrid({
   rfxLines,
@@ -39,33 +40,115 @@ export function ComparisonGrid({
   linesParam: string | null;
 }) {
   const [selected, setSelected] = useState<{ lineId: string; vendorId: string } | null>(null);
-  // Buyer's award decision per line — defaults to the cheapest verified price, but the buyer can
-  // override per line from the detail panel. Only lines with at least one quote get a default.
-  const [awarded, setAwarded] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {};
-    for (const [lineId, best] of Object.entries(cheapestPerLine)) if (best) init[lineId] = best.vendorId;
+
+  // Award decision per line, as a list of (vendor, qty) allocations rather
+  // than a single vendor — a line can be split across more than one vendor
+  // (e.g. one vendor can't cover the full quantity, or the buyer wants to
+  // de-risk a single-vendor dependency), or awarded to nobody at all if the
+  // buyer deliberately excludes it. Defaults to the full line quantity
+  // single-sourced to whoever's cheapest and verified; the buyer adjusts
+  // from there via the detail panel.
+  const [awarded, setAwarded] = useState<Record<string, Allocation[]>>(() => {
+    const init: Record<string, Allocation[]> = {};
+    for (const line of rfxLines) {
+      const best = cheapestPerLine[line.id];
+      init[line.id] = best ? [{ vendorId: best.vendorId, qty: line.qty }] : [];
+    }
     return init;
   });
   const [generating, setGenerating] = useState(false);
   const [prError, setPrError] = useState<string | null>(null);
+
+  // What-if quantity: lets the buyer resize a line before awarding (a budget
+  // cut, a pilot batch, checking a volume breakpoint) without re-running
+  // extraction. This recomputes extended totals using the SAME per-unit
+  // price already on file — it is explicitly NOT a re-quote. Real vendor
+  // pricing can change with volume (Horizon's own laptop quote is a range
+  // "depending on final committed quantity" for exactly this reason), so
+  // any line the buyer resizes is marked and called out, never blended in
+  // silently.
+  const [qtyOverrides, setQtyOverrides] = useState<Record<string, number>>({});
+
+  function effectiveQty(lineId: string, fallback: number): number {
+    const override = qtyOverrides[lineId];
+    return typeof override === "number" && override > 0 ? override : fallback;
+  }
+
+  function allocationFor(lineId: string, vendorId: string): number | null {
+    const a = (awarded[lineId] ?? []).find((x) => x.vendorId === vendorId);
+    return a ? a.qty : null;
+  }
+
+  // Sets (or clears, at qty 0) this line's allocation to one vendor without
+  // touching any other vendor already sharing the line — that's what makes
+  // a split possible: award 15 to Prime and 5 to Meridian on the same line
+  // by calling this twice.
+  function setAllocation(lineId: string, vendorId: string, qty: number) {
+    setAwarded((prev) => {
+      const others = (prev[lineId] ?? []).filter((a) => a.vendorId !== vendorId);
+      return { ...prev, [lineId]: qty > 0 ? [...others, { vendorId, qty }] : others };
+    });
+  }
+
+  function deselectLine(lineId: string) {
+    setAwarded((prev) => ({ ...prev, [lineId]: [] }));
+  }
+
+  function handleQtyChange(line: RfxLine, raw: string) {
+    const v = Number(raw);
+    if (!Number.isFinite(v) || v <= 0) return;
+    setQtyOverrides((prev) => {
+      const next = { ...prev };
+      if (v !== line.qty) next[line.id] = v;
+      else delete next[line.id];
+      return next;
+    });
+    // Single-vendor lines track the resized quantity automatically — that's
+    // the common case (buyer just wants a smaller version of the same
+    // award). A line already split across vendors is left alone: the buyer
+    // is managing it by hand at that point, and silently rescaling one split
+    // while leaving the other fixed would be a worse assumption than doing
+    // nothing and surfacing the mismatch instead.
+    setAwarded((prev) => {
+      const allocs = prev[line.id] ?? [];
+      if (allocs.length === 1) return { ...prev, [line.id]: [{ ...allocs[0], qty: v }] };
+      return prev;
+    });
+  }
 
   const categories = Array.from(new Set(rfxLines.map((l) => l.category)));
 
   const selectedLine = selected ? rfxLines.find((l) => l.id === selected.lineId) : null;
   const selectedVendor = selected ? vendors.find((v) => v.id === selected.vendorId) : null;
   const selectedCell = selected ? grid[selected.lineId][selected.vendorId] : null;
+  const selectedAllocations = selectedLine ? awarded[selectedLine.id] ?? [] : [];
+  const selectedAllocatedSum = selectedAllocations.reduce((s, a) => s + a.qty, 0);
+  const selectedLineTotal = selectedLine ? effectiveQty(selectedLine.id, selectedLine.qty) : 0;
+  const selectedRemaining = selectedLineTotal - selectedAllocatedSum;
 
   function cheapestVendorId(lineId: string): string | null {
     return cheapestPerLine[lineId]?.vendorId ?? null;
   }
 
-  const awardedLineIds = Object.keys(awarded);
-  const excludedCount = rfxLines.length - awardedLineIds.length;
+  const awardedLineIds = rfxLines.filter((l) => (awarded[l.id] ?? []).length > 0).map((l) => l.id);
+  const noQuoteCount = rfxLines.filter((l) => !cheapestPerLine[l.id]).length;
+  const deselectedCount = rfxLines.filter((l) => cheapestPerLine[l.id] && (awarded[l.id] ?? []).length === 0).length;
+  const partiallyAllocated = rfxLines.filter((l) => {
+    const allocs = awarded[l.id] ?? [];
+    if (allocs.length === 0) return false;
+    const sum = allocs.reduce((s, a) => s + a.qty, 0);
+    return sum !== effectiveQty(l.id, l.qty);
+  });
+  const resizedCount = Object.keys(qtyOverrides).length;
   const prTotal = rfxLines.reduce((sum, line) => {
-    const vId = awarded[line.id];
-    if (!vId) return sum;
-    const cell = grid[line.id][vId];
-    return sum + (cell.normalizedPriceInr ?? 0) * line.qty;
+    const allocs = awarded[line.id] ?? [];
+    return (
+      sum +
+      allocs.reduce((s, a) => {
+        const cell = grid[line.id][a.vendorId];
+        return s + (cell.normalizedPriceInr ?? 0) * a.qty;
+      }, 0)
+    );
   }, 0);
 
   async function generatePR() {
@@ -75,7 +158,7 @@ export function ComparisonGrid({
       const res = await fetch("/api/generate-pr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ awarded, lines: linesParam }),
+        body: JSON.stringify({ awarded, lines: linesParam, qtyOverrides }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -129,18 +212,53 @@ export function ComparisonGrid({
                   .filter((l) => l.category === cat)
                   .map((line) => {
                     const cheapest = cheapestVendorId(line.id);
-                    const awardedVendorId = awarded[line.id];
+                    const allocs = awarded[line.id] ?? [];
+                    const lineTotal = effectiveQty(line.id, line.qty);
+                    const allocatedSum = allocs.reduce((s, a) => s + a.qty, 0);
+                    const isSplit = allocs.length > 1;
+                    const isDeselected = allocs.length === 0 && !!cheapestPerLine[line.id];
+                    const isPartial = allocs.length > 0 && allocatedSum !== lineTotal;
                     return (
                       <tr key={line.id} className="border-b border-neutral-100 align-top">
                         <td className="px-4 py-3">
                           <div className="font-medium text-neutral-800">{line.description}</div>
-                          <div className="text-xs text-neutral-400 mt-0.5">qty {line.qty}</div>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                            <span className="text-xs text-neutral-400">qty</span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={lineTotal}
+                              onChange={(e) => handleQtyChange(line, e.target.value)}
+                              className="w-14 text-xs font-mono tabular-nums border border-transparent hover:border-neutral-200 focus:border-orange-300 rounded px-1 py-0.5 -ml-1 bg-transparent focus:bg-white focus:outline-none"
+                            />
+                            {qtyOverrides[line.id] !== undefined && (
+                              <span className="text-[9px] font-mono uppercase tracking-wide text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 py-0.5">
+                                edited from {line.qty}
+                              </span>
+                            )}
+                            {isSplit && (
+                              <span className="text-[9px] font-mono uppercase tracking-wide text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 py-0.5">
+                                split {allocs.length} ways
+                              </span>
+                            )}
+                            {isDeselected && (
+                              <span className="text-[9px] font-mono uppercase tracking-wide text-neutral-500 bg-neutral-100 border border-neutral-200 rounded px-1 py-0.5">
+                                deselected
+                              </span>
+                            )}
+                            {isPartial && (
+                              <span className="text-[9px] font-mono uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded px-1 py-0.5">
+                                {allocatedSum}/{lineTotal} allocated
+                              </span>
+                            )}
+                          </div>
                         </td>
                         {vendors.map((v) => {
                           const cell = grid[line.id][v.id];
                           const isSelected = selected?.lineId === line.id && selected?.vendorId === v.id;
                           const isCheapest = cheapest === v.id;
-                          const isAwarded = awardedVendorId === v.id;
+                          const allocQty = allocationFor(line.id, v.id);
+                          const isAwarded = allocQty !== null;
                           const flagged = needsAttention(cell);
 
                           return (
@@ -166,7 +284,9 @@ export function ComparisonGrid({
                                   </span>
                                 )}
                                 {isAwarded && (
-                                  <div className="text-[9px] font-mono uppercase tracking-wide text-blue-600 mt-0.5">Awarded</div>
+                                  <div className="text-[9px] font-mono uppercase tracking-wide text-blue-600 mt-0.5">
+                                    Awarded {allocQty}
+                                  </div>
                                 )}
                                 {flagged && (
                                   <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-amber-400 align-middle" />
@@ -253,19 +373,83 @@ export function ComparisonGrid({
                     <div className="text-xs text-neutral-400 mt-1">Vendor's own description: {selectedCell.vendorDescription}</div>
                   </div>
 
+                  {/* Allocation editor — award for the whole line, not just the clicked vendor */}
                   <div className="mt-4 pt-3 border-t border-neutral-100">
-                    {awarded[selected!.lineId] === selected!.vendorId ? (
-                      <div className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2 text-center">
-                        ✓ Awarded this line
+                    <div className="text-[10px] font-mono uppercase tracking-wide text-neutral-400 mb-2">Award for this line</div>
+
+                    {selectedAllocations.length === 0 && (
+                      <div className="text-xs text-neutral-400 italic mb-2">Deselected — not included in the PR.</div>
+                    )}
+
+                    {selectedAllocations.length > 0 && (
+                      <div className="space-y-1.5 mb-2">
+                        {selectedAllocations.map((a) => {
+                          const vName = vendors.find((v) => v.id === a.vendorId)?.name ?? a.vendorId;
+                          return (
+                            <div
+                              key={a.vendorId}
+                              className="flex items-center justify-between text-xs bg-blue-50 border border-blue-200 rounded-md px-2 py-1.5"
+                            >
+                              <span className="font-medium text-blue-800">{vName}</span>
+                              <span className="flex items-center gap-2">
+                                <span className="font-mono tabular-nums text-blue-700">{a.qty}</span>
+                                <button
+                                  onClick={() => setAllocation(selectedLine.id, a.vendorId, 0)}
+                                  aria-label={`Remove ${vName} from this line's award`}
+                                  className="text-blue-400 hover:text-rose-600"
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : (
+                    )}
+
+                    {selectedRemaining !== 0 && (
+                      <div className={`text-xs mb-2 ${selectedRemaining > 0 ? "text-amber-600" : "text-rose-600"}`}>
+                        {selectedRemaining > 0
+                          ? `${selectedRemaining} of ${selectedLineTotal} units not yet allocated to any vendor.`
+                          : `Over-allocated by ${-selectedRemaining} units — allocations add up to more than the line's quantity.`}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-neutral-500">Allocate to {selectedVendor.name}:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={allocationFor(selectedLine.id, selectedVendor.id) ?? 0}
+                        onChange={(e) => {
+                          const q = Number(e.target.value);
+                          setAllocation(selectedLine.id, selectedVendor.id, Number.isFinite(q) ? Math.max(0, q) : 0);
+                        }}
+                        className="w-16 text-xs font-mono tabular-nums border border-neutral-200 rounded px-1.5 py-1 focus:border-orange-300 focus:outline-none"
+                      />
+                      <span className="text-xs text-neutral-400">units</span>
+                    </div>
+                    {selectedRemaining > 0 && (
                       <button
-                        onClick={() => setAwarded((a) => ({ ...a, [selected!.lineId]: selected!.vendorId }))}
-                        className="w-full text-xs font-medium text-blue-700 border border-blue-200 rounded-md px-3 py-2 hover:bg-blue-50"
+                        onClick={() =>
+                          setAllocation(
+                            selectedLine.id,
+                            selectedVendor.id,
+                            (allocationFor(selectedLine.id, selectedVendor.id) ?? 0) + selectedRemaining
+                          )
+                        }
+                        className="text-xs text-blue-700 hover:underline mt-1.5"
                       >
-                        Award this line to {selectedVendor.name}
+                        Fill remaining {selectedRemaining} to {selectedVendor.name} →
                       </button>
                     )}
+
+                    <button
+                      onClick={() => deselectLine(selectedLine.id)}
+                      className="w-full text-xs font-medium text-neutral-500 border border-neutral-200 rounded-md px-3 py-2 hover:bg-neutral-50 mt-3"
+                    >
+                      Deselect this line entirely
+                    </button>
                   </div>
                 </>
               )}
@@ -283,13 +467,30 @@ export function ComparisonGrid({
           <div className="text-sm text-neutral-600 mt-1">
             {awardedLineIds.length} of {rfxLines.length} line{rfxLines.length === 1 ? "" : "s"} awarded ·{" "}
             <span className="font-mono font-semibold text-neutral-800">{money(prTotal)}</span> total
-            {excludedCount > 0 && (
-              <span className="text-amber-600"> · {excludedCount} line{excludedCount === 1 ? "" : "s"} excluded (not quoted by any vendor)</span>
+            {noQuoteCount > 0 && (
+              <span className="text-amber-600"> · {noQuoteCount} line{noQuoteCount === 1 ? "" : "s"} excluded (not quoted by any vendor)</span>
+            )}
+            {deselectedCount > 0 && (
+              <span className="text-neutral-500"> · {deselectedCount} line{deselectedCount === 1 ? "" : "s"} deselected by you</span>
             )}
           </div>
           <div className="text-xs text-neutral-400 mt-1">
-            Defaults to the lowest verified price per line — click any cell above, then "Award this line" to override.
+            Defaults to the lowest verified price per line — click any cell above to award or split that line, or deselect it
+            entirely. Quantities are editable too — change one to model a different order size.
           </div>
+          {resizedCount > 0 && (
+            <div className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded-md px-2.5 py-1.5 mt-2 inline-block">
+              {resizedCount} line{resizedCount === 1 ? "" : "s"} resized from the original RFx quantity — totals above are an{" "}
+              <span className="font-medium">estimate at the vendor's quoted unit price</span>. Actual pricing can change at a
+              different volume; treat this as a what-if, not a confirmed quote, until the vendor requotes.
+            </div>
+          )}
+          {partiallyAllocated.length > 0 && (
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5 mt-2 inline-block">
+              {partiallyAllocated.length} line{partiallyAllocated.length === 1 ? "" : "s"} don't add up to their full quantity yet
+              (split awarded to less — or more — than what was asked for). Fix these before generating the PR.
+            </div>
+          )}
         </div>
         <div className="flex flex-col items-end gap-1">
           <button
