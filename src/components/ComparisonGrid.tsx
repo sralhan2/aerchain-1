@@ -196,13 +196,16 @@ export function ComparisonGrid({
                     {v.name}
                   </th>
                 ))}
+                <th className="text-right font-mono text-[10px] uppercase tracking-wide text-neutral-400 px-4 py-3 w-[110px]">
+                  Line total
+                </th>
               </tr>
             </thead>
             {categories.map((cat) => (
               <tbody key={`cat-${cat}`}>
                 <tr>
                   <td
-                    colSpan={vendors.length + 1}
+                    colSpan={vendors.length + 2}
                     className="bg-neutral-50/70 px-4 py-1.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide"
                   >
                     {cat}
@@ -218,6 +221,10 @@ export function ComparisonGrid({
                     const isSplit = allocs.length > 1;
                     const isDeselected = allocs.length === 0 && !!cheapestPerLine[line.id];
                     const isPartial = allocs.length > 0 && allocatedSum !== lineTotal;
+                    const lineAwardedTotal = allocs.reduce((s, a) => {
+                      const cell = grid[line.id][a.vendorId];
+                      return s + (cell?.normalizedPriceInr ?? 0) * a.qty;
+                    }, 0);
                     return (
                       <tr key={line.id} className="border-b border-neutral-100 align-top">
                         <td className="px-4 py-3">
@@ -295,12 +302,31 @@ export function ComparisonGrid({
                             </td>
                           );
                         })}
+                        <td className="px-4 py-3 text-right align-top">
+                          {allocs.length === 0 ? (
+                            <span className="text-sm text-neutral-300">—</span>
+                          ) : (
+                            <span className="font-mono tabular-nums font-semibold text-neutral-800">
+                              {money(lineAwardedTotal)}
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
               </tbody>
             ))}
           </table>
+          <div className="flex items-center justify-between gap-4 px-4 py-3 bg-neutral-50 border-t border-neutral-200">
+            <div className="text-xs font-mono uppercase tracking-wide text-neutral-500">
+              Grand total{" "}
+              <span className="text-neutral-400 normal-case font-sans">
+                — {awardedLineIds.length} of {rfxLines.length} line{rfxLines.length === 1 ? "" : "s"} awarded, across all
+                allocations
+              </span>
+            </div>
+            <div className="font-mono font-semibold text-lg tabular-nums text-neutral-900">{money(prTotal)}</div>
+          </div>
         </div>
         <p className="text-xs text-neutral-400 mt-3">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 align-middle mr-1" />
