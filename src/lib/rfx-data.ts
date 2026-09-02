@@ -2,7 +2,7 @@ import rfxJson from "./rfx-data.json";
 
 export type RfxLine = {
   id: string;
-  category: "Laptop" | "Monitor" | "Docking Station" | "Peripheral" | "Warranty";
+  category: "Laptop" | "Monitor" | "Docking Station" | "Peripheral" | "Warranty" | "Networking" | "Audio/Video" | "Power" | "Storage" | "Software" | "Accessory";
   description: string;
   spec: string;
   qty: number;

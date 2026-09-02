@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { serializeLinesParam } from "@/lib/line-selection";
+import { RFX } from "@/lib/rfx-data";
+
+const CATALOG_DESC: Record<string, string> = Object.fromEntries(RFX.lines.map((l) => [l.id, l.description]));
 
 type Turn = { role: "user" | "assistant"; content: string };
 type Draft = {
@@ -22,8 +25,12 @@ export function RfxCopilotClient() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [pendingSend, setPendingSend] = useState<{
+    query: string;
+    ambiguousQtyLines: { draftLine: string; matchedCatalogIds: string[]; qty: number }[];
+  } | null>(null);
 
-  async function sendToVendors() {
+  async function matchAndProceed() {
     if (!draft) return;
     setSending(true);
     setSendError(null);
@@ -36,8 +43,16 @@ export function RfxCopilotClient() {
         }),
       });
       if (!res.ok) throw new Error(`Matching request failed (${res.status})`);
-      const { rfxLineIds, qtyOverrides } = await res.json();
+      const { rfxLineIds, qtyOverrides, ambiguousQtyLines } = await res.json();
       const query = rfxLineIds?.length ? `?lines=${encodeURIComponent(serializeLinesParam(rfxLineIds, qtyOverrides ?? {}))}` : "";
+      if (ambiguousQtyLines?.length) {
+        // One of the buyer's lines matched more than one catalog SKU — don't
+        // silently pick a quantity behavior and navigate away. Show what was
+        // assumed and let the buyer confirm or go back and split the line.
+        setPendingSend({ query, ambiguousQtyLines });
+        setSending(false);
+        return;
+      }
       router.push(`/inbox${query}`);
     } catch (err: any) {
       // If matching fails, fall back to showing the full fixed catalog rather than blocking the demo.
@@ -46,6 +61,15 @@ export function RfxCopilotClient() {
     } finally {
       setSending(false);
     }
+  }
+
+  function sendToVendors() {
+    void matchAndProceed();
+  }
+
+  function confirmPendingSend() {
+    if (!pendingSend) return;
+    router.push(`/inbox${pendingSend.query}`);
   }
 
   async function send(text: string) {
@@ -173,7 +197,7 @@ export function RfxCopilotClient() {
 
           <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between gap-4">
             <p className="text-xs text-neutral-400 max-w-sm">
-              For this demo, sending routes to the pre-seeded vendor inbox (4 fabricated responses already on file) rather than a
+              For this demo, sending routes to the pre-seeded vendor inbox (5 fabricated responses already on file) rather than a
               freshly generated one — see the one-pager for why. The comparison screen will only show the catalog lines that match
               what you actually asked for above.
             </p>
@@ -186,6 +210,39 @@ export function RfxCopilotClient() {
             </button>
           </div>
           {sendError && <p className="text-xs text-amber-600 mt-2">⚠ {sendError}</p>}
+
+          {pendingSend && (
+            <div className="mt-4 border border-amber-200 bg-amber-50 rounded-md p-4">
+              <div className="text-sm font-medium text-amber-900">Before this goes out — some quantities are an assumption</div>
+              <p className="text-xs text-amber-800 mt-1">
+                At least one line you wrote matches more than one item in the vendor catalog, so there's no single correct way to
+                split your quantity across them. We applied your stated quantity to each match rather than guess a split — check
+                this is what you meant:
+              </p>
+              <ul className="text-xs text-amber-900 mt-2 space-y-1 list-disc pl-5">
+                {pendingSend.ambiguousQtyLines.map((a, i) => (
+                  <li key={i}>
+                    <span className="font-medium">"{a.draftLine}"</span> → applied qty {a.qty} to each of:{" "}
+                    {a.matchedCatalogIds.map((id) => CATALOG_DESC[id] ?? id).join(", ")}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  onClick={confirmPendingSend}
+                  className="bg-amber-600 text-white text-xs font-medium px-3 py-1.5 rounded-md hover:bg-amber-700"
+                >
+                  Looks right, continue →
+                </button>
+                <button
+                  onClick={() => setPendingSend(null)}
+                  className="text-xs font-medium text-amber-800 hover:underline"
+                >
+                  Let me edit the draft instead
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -165,15 +165,31 @@ ${RFX.questionnaire.map((q, i) => `${i + 1}. ${q.q}`).join("\n")}`;
 
   const response = await getClient().messages.create({
     model: "claude-sonnet-4-5",
-    max_tokens: 4096,
+    // 4096 was tuned against the original 18-line catalog. At 30 lines, the
+    // fullest quotes (a full-catalog vendor, or one with long per-line
+    // citations) can produce a tool call that runs past that and gets cut
+    // off mid-JSON — the malformed result that surfaces downstream as a
+    // missing `lines` array. Headroom here, not near the ceiling.
+    max_tokens: 8192,
     system: systemPrompt,
     tools: [EXTRACTION_TOOL],
     tool_choice: { type: "tool", name: "submit_extraction" },
     messages: [{ role: "user", content: userContent }],
   });
 
+  if (response.stop_reason === "max_tokens") {
+    throw new Error(
+      `Extraction for ${vendorName} was cut off before finishing (hit the token limit) — the response is incomplete, not just low-confidence. Try again.`
+    );
+  }
+
   const toolUse = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
   if (!toolUse) throw new Error(`No tool_use block returned for vendor ${vendorName}`);
 
-  return toolUse.input as ExtractionResult;
+  const result = toolUse.input as ExtractionResult;
+  if (!Array.isArray(result.lines)) {
+    throw new Error(`Extraction for ${vendorName} returned no usable line data — the model's response may have been malformed. Try again.`);
+  }
+
+  return result;
 }

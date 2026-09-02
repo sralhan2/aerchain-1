@@ -12,19 +12,33 @@ export async function POST(req: Request) {
     const matches = await matchDraftToCatalog(lines);
     const rfxLineIds = Array.from(new Set(matches.flatMap((m) => m.matched_catalog_ids)));
 
-    // Only set a qty override when a draft line maps to exactly one catalog
-    // line — an ambiguous match (e.g. generic "laptops" spanning three
-    // variants) has no unambiguous way to split the buyer's requested
-    // quantity across them, so those keep the catalog's own quantity.
+    // A draft line maps to exactly one catalog line most of the time, and
+    // the buyer's stated quantity applies to it directly. When it's
+    // ambiguous — a generic "laptops" spanning the standard + premium SKUs —
+    // there's no way to know how the buyer's total splits across variants.
+    // Silently falling back to the fixed catalog's own demo quantities was
+    // the previous behavior here, and it's actively dangerous: a buyer who
+    // typed "20 laptops" could see 120 and 40 awarded instead — a purchase
+    // requisition overstating what they asked for by 6-8x, with nothing on
+    // screen to say so. Applying their stated quantity to every matched
+    // variant is still an assumption, but it errs toward the number the
+    // buyer actually typed rather than a stale catalog default, and — unlike
+    // the old behavior — it's a flagged assumption the buyer can see and
+    // correct, not a silent one.
     const qtyByDescription = new Map(lines.map((l: any, i: number) => [l.description, l.qty] as const));
     const qtyOverrides: Record<string, number> = {};
+    const ambiguousQtyLines: { draftLine: string; matchedCatalogIds: string[]; qty: number }[] = [];
     matches.forEach((m, i) => {
-      if (m.matched_catalog_ids.length !== 1) return;
+      if (m.matched_catalog_ids.length === 0) return;
       const qty = qtyByDescription.get(m.draft_line) ?? lines[i]?.qty;
-      if (typeof qty === "number" && qty > 0) qtyOverrides[m.matched_catalog_ids[0]] = qty;
+      if (typeof qty !== "number" || qty <= 0) return;
+      for (const catalogId of m.matched_catalog_ids) qtyOverrides[catalogId] = qty;
+      if (m.matched_catalog_ids.length > 1) {
+        ambiguousQtyLines.push({ draftLine: m.draft_line, matchedCatalogIds: m.matched_catalog_ids, qty });
+      }
     });
 
-    return NextResponse.json({ rfxLineIds, matches, qtyOverrides });
+    return NextResponse.json({ rfxLineIds, matches, qtyOverrides, ambiguousQtyLines });
   } catch (err: any) {
     console.error("match-rfx-lines failed:", err);
     return NextResponse.json({ error: err?.message ?? "Matching failed" }, { status: 500 });
