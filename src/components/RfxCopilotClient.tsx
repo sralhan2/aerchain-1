@@ -28,6 +28,7 @@ export function RfxCopilotClient() {
   const [pendingSend, setPendingSend] = useState<{
     query: string;
     ambiguousQtyLines: { draftLine: string; matchedCatalogIds: string[]; qty: number }[];
+    unmatchedLines: { draftLine: string; note: string }[];
   } | null>(null);
 
   async function matchAndProceed() {
@@ -43,13 +44,15 @@ export function RfxCopilotClient() {
         }),
       });
       if (!res.ok) throw new Error(`Matching request failed (${res.status})`);
-      const { rfxLineIds, qtyOverrides, ambiguousQtyLines } = await res.json();
+      const { rfxLineIds, qtyOverrides, ambiguousQtyLines, unmatchedLines } = await res.json();
       const query = rfxLineIds?.length ? `?lines=${encodeURIComponent(serializeLinesParam(rfxLineIds, qtyOverrides ?? {}))}` : "";
-      if (ambiguousQtyLines?.length) {
-        // One of the buyer's lines matched more than one catalog SKU — don't
-        // silently pick a quantity behavior and navigate away. Show what was
-        // assumed and let the buyer confirm or go back and split the line.
-        setPendingSend({ query, ambiguousQtyLines });
+      if (ambiguousQtyLines?.length || unmatchedLines?.length) {
+        // Either a buyer's line matched more than one catalog SKU (ambiguous
+        // quantity split) or matched none at all (nothing in the vendor
+        // catalog covers it, so it can't go to vendors) — either way, don't
+        // silently navigate away with the line changed or dropped. Show what
+        // happened and let the buyer confirm or go back and fix the draft.
+        setPendingSend({ query, ambiguousQtyLines: ambiguousQtyLines ?? [], unmatchedLines: unmatchedLines ?? [] });
         setSending(false);
         return;
       }
@@ -213,20 +216,42 @@ export function RfxCopilotClient() {
 
           {pendingSend && (
             <div className="mt-4 border border-amber-200 bg-amber-50 rounded-md p-4">
-              <div className="text-sm font-medium text-amber-900">Before this goes out — some quantities are an assumption</div>
-              <p className="text-xs text-amber-800 mt-1">
-                At least one line you wrote matches more than one item in the vendor catalog, so there's no single correct way to
-                split your quantity across them. We applied your stated quantity to each match rather than guess a split — check
-                this is what you meant:
-              </p>
-              <ul className="text-xs text-amber-900 mt-2 space-y-1 list-disc pl-5">
-                {pendingSend.ambiguousQtyLines.map((a, i) => (
-                  <li key={i}>
-                    <span className="font-medium">"{a.draftLine}"</span> → applied qty {a.qty} to each of:{" "}
-                    {a.matchedCatalogIds.map((id) => CATALOG_DESC[id] ?? id).join(", ")}
-                  </li>
-                ))}
-              </ul>
+              <div className="text-sm font-medium text-amber-900">Before this goes out — a couple of things to check</div>
+
+              {pendingSend.unmatchedLines.length > 0 && (
+                <div className={pendingSend.ambiguousQtyLines.length > 0 ? "mt-2" : "mt-1"}>
+                  <p className="text-xs text-amber-800">
+                    None of our 5 vendors were asked to quote on the following — they don't exist in this RFx's vendor catalog, so
+                    they'll be dropped entirely and won't appear on the comparison screen unless you edit the draft:
+                  </p>
+                  <ul className="text-xs text-amber-900 mt-2 space-y-1 list-disc pl-5">
+                    {pendingSend.unmatchedLines.map((u, i) => (
+                      <li key={i}>
+                        <span className="font-medium">"{u.draftLine}"</span> — {u.note}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {pendingSend.ambiguousQtyLines.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-amber-800">
+                    At least one line you wrote matches more than one item in the vendor catalog, so there's no single correct way
+                    to split your quantity across them. We applied your stated quantity to each match rather than guess a split —
+                    check this is what you meant:
+                  </p>
+                  <ul className="text-xs text-amber-900 mt-2 space-y-1 list-disc pl-5">
+                    {pendingSend.ambiguousQtyLines.map((a, i) => (
+                      <li key={i}>
+                        <span className="font-medium">"{a.draftLine}"</span> → applied qty {a.qty} to each of:{" "}
+                        {a.matchedCatalogIds.map((id) => CATALOG_DESC[id] ?? id).join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="mt-3 flex items-center gap-3">
                 <button
                   onClick={confirmPendingSend}

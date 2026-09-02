@@ -20,6 +20,7 @@ export type VendorSummary = {
   sourceFile: string;
   currencyDetected: string | null;
   linesQuoted: number;
+  linesPriced: number;
   linesTotal: number;
   avgConfidence: number | null;
   notes: string | null;
@@ -46,7 +47,17 @@ export async function getComparisonData(selectedLineIds?: string[] | null, qtyOv
       format: v.response_format,
       sourceFile: v.source_file,
       currencyDetected: v.extractions[0]?.currency ?? null,
+      // "Quoted" means the vendor addressed this line at all (matched a line
+      // ID) — it does NOT mean there's a usable number, e.g. a line priced
+      // only as an ambiguous range extracts with normalized_unit_price_inr
+      // null but still counts as quoted here. "Priced" is the stricter
+      // count that actually has a number, and is what "full quote" for
+      // single-sourcing purposes must be judged against below — a vendor
+      // isn't a viable sole-source just because they mentioned every line.
       linesQuoted: v.extractions.filter((e) => e.rfx_line_id && rfxLines.some((l) => l.id === e.rfx_line_id)).length,
+      linesPriced: v.extractions.filter(
+        (e) => e.rfx_line_id && rfxLines.some((l) => l.id === e.rfx_line_id) && e.normalized_unit_price_inr !== null
+      ).length,
       linesTotal: rfxLines.length,
       avgConfidence: confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : null,
       notes: v.notes,

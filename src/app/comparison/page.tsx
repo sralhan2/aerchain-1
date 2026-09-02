@@ -19,8 +19,13 @@ export default async function ComparisonPage({ searchParams }: { searchParams: P
   const vendorTotals = computeVendorTotals(rfxLines, vendors, grid);
   const cheapestPerLine = computeCheapestPerLine(rfxLines, vendors, grid);
 
+  // "Full quote" for single-sourcing must mean every line has an actual
+  // usable price (linesPriced), not just that the vendor addressed every
+  // line (linesQuoted) — a line priced only as an ambiguous range or a
+  // bundle extracts with a null price and would otherwise contribute Rs 0
+  // to estTotal, making an incomplete quote look like the cheapest one.
   const cheapestCoveredVendor = [...vendorTotals]
-    .filter((v) => v.linesQuoted === rfxLines.length)
+    .filter((v) => v.linesPriced === rfxLines.length && v.estTotal > 0)
     .sort((a, b) => a.estTotal - b.estTotal)[0];
 
   return (
